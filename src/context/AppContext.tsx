@@ -1,8 +1,17 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Course, Certificate, User, ContactInquiry, PaymentSettings, UpiTransaction } from '@/types';
-import { COURSES } from '@/data/courses';
+import {
+  Course,
+  Certificate,
+  User,
+  ContactInquiry,
+  PaymentSettings,
+  UpiTransaction,
+  Instructor,
+  Flashcard,
+} from '@/types';
+import { COURSES, INSTRUCTORS } from '@/data/courses';
 
 interface AppContextType {
   user: User;
@@ -27,6 +36,26 @@ interface AppContextType {
   issueCertificate: (courseId: string, scorePercent: number) => Certificate;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  // Dynamic Catalog & Instructor State
+  courses: Course[];
+  instructors: Record<string, Instructor>;
+  addInstructor: (instructor: Instructor) => void;
+  deleteInstructor: (instructorId: string) => void;
+  deleteCourse: (courseId: string) => void;
+  deleteLesson: (courseId: string, sectionId: string, lessonId: string) => void;
+  updateCoursePriceAndQuiz: (
+    courseId: string,
+    price: number,
+    originalPrice?: number,
+    quiz?: Course['quiz'],
+    flashcards?: Flashcard[],
+    interactiveQuizHtml?: string
+  ) => void;
+  // Security & Premium Video Downloads
+  isPremium: boolean;
+  upgradeToPremium: () => void;
+  requirePremiumForDownloads: boolean;
+  setRequirePremiumForDownloads: (val: boolean) => void;
   // Contact inquiries routed directly to Admin Portal
   inquiries: ContactInquiry[];
   submitInquiry: (data: { name: string; email: string; message: string }) => Promise<void>;
@@ -41,6 +70,16 @@ interface AppContextType {
   transactions: UpiTransaction[];
   recordUpiTransaction: (tx: Omit<UpiTransaction, 'id' | 'timestamp'>) => void;
   updateTransactionStatus: (id: string, status: 'verified' | 'pending' | 'rejected') => void;
+  verifyPayment: (params: {
+    method: 'upi' | 'razorpay';
+    utrNumber?: string;
+    razorpayPaymentId?: string;
+    razorpayOrderId?: string;
+    studentName?: string;
+    studentEmail?: string;
+    courseTitle?: string;
+    amount?: number;
+  }) => Promise<{ success: boolean; message: string; transaction?: any }>;
 }
 
 const DEFAULT_USER: User = {
@@ -48,6 +87,7 @@ const DEFAULT_USER: User = {
   name: 'Arham Khan',
   email: 'arham.khan@univer-e.in',
   role: 'student',
+  isPremium: false,
   avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
   enrolledCourseIds: ['ai-fundamentals-python', 'graphic-design-canva-pro'],
   completedCourseIds: ['graphic-design-canva-pro'],
@@ -135,6 +175,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User>(DEFAULT_USER);
+  const [courses, setCourses] = useState<Course[]>(COURSES);
+  const [instructors, setInstructors] = useState<Record<string, Instructor>>(INSTRUCTORS);
+  const [requirePremiumForDownloads, setRequirePremiumForDownloads] = useState<boolean>(true);
+
   const [wishlistIds, setWishlistIds] = useState<string[]>(['full-stack-web-dev']);
   const [cart, setCart] = useState<Course[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -164,6 +208,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setTransactions(JSON.parse(savedTxs));
         } catch (e) {}
       }
+      const savedCourses = localStorage.getItem('univere_courses');
+      if (savedCourses) {
+        try {
+          setCourses(JSON.parse(savedCourses));
+        } catch (e) {}
+      }
+      const savedInstructors = localStorage.getItem('univere_instructors');
+      if (savedInstructors) {
+        try {
+          setInstructors(JSON.parse(savedInstructors));
+        } catch (e) {}
+      }
+      const savedSec = localStorage.getItem('univere_premium_downloads_policy');
+      if (savedSec !== null) {
+        setRequirePremiumForDownloads(savedSec === 'true');
+      }
+      const savedUser = localStorage.getItem('univere_active_user');
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (e) {}
+      }
     }
   }, []);
 
@@ -177,6 +243,111 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
+  };
+
+  const addInstructor = (instructor: Instructor) => {
+    setInstructors(prev => {
+      const updated = { ...prev, [instructor.id]: instructor };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_instructors', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Instructor "${instructor.name}" registered and published!`);
+  };
+
+  const deleteInstructor = (instructorId: string) => {
+    setInstructors(prev => {
+      const updated = { ...prev };
+      delete updated[instructorId];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_instructors', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Instructor removed from registry.`);
+  };
+
+  const deleteCourse = (courseId: string) => {
+    setCourses(prev => {
+      const updated = prev.filter(c => c.id !== courseId && c.slug !== courseId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_courses', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Course deleted from catalog.`);
+  };
+
+  const deleteLesson = (courseId: string, sectionId: string, lessonId: string) => {
+    setCourses(prev => {
+      const updated = prev.map(course => {
+        if (course.id !== courseId && course.slug !== courseId) return course;
+        return {
+          ...course,
+          curriculum: course.curriculum.map(sec => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              lessons: sec.lessons.filter(l => l.id !== lessonId),
+            };
+          }),
+          lessonsCount: Math.max(1, course.lessonsCount - 1),
+        };
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_courses', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Lecture video deleted successfully.`);
+  };
+
+  const updateCoursePriceAndQuiz = (
+    courseId: string,
+    price: number,
+    originalPrice?: number,
+    quiz?: Course['quiz'],
+    flashcards?: Flashcard[],
+    interactiveQuizHtml?: string
+  ) => {
+    setCourses(prev => {
+      const updated = prev.map(c => {
+        if (c.id !== courseId && c.slug !== courseId) return c;
+        return {
+          ...c,
+          price,
+          originalPrice: originalPrice || c.originalPrice,
+          ...(quiz ? { quiz } : {}),
+          ...(flashcards ? { flashcards } : {}),
+          ...(interactiveQuizHtml ? { interactiveQuizHtml } : {}),
+        };
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_courses', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Course pricing & Universal AI assessment published!`);
+  };
+
+  const upgradeToPremium = () => {
+    setUser(prev => {
+      const updated = { ...prev, isPremium: true };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast('🌟 UNIVER-E Premium Pass Activated! Offline Downloads Unlocked.');
+  };
+
+  const handleSetRequirePremiumPolicy = (val: boolean) => {
+    setRequirePremiumForDownloads(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('univere_premium_downloads_policy', String(val));
+    }
+    showToast(`Download Security Policy: ${val ? 'Premium Tier Required' : 'Open Access'}`);
   };
 
   const updatePaymentSettings = (settings: Partial<PaymentSettings>) => {
@@ -220,6 +391,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Transaction ${id} marked as ${status}`);
   };
 
+  const verifyPayment = async (params: {
+    method: 'upi' | 'razorpay';
+    utrNumber?: string;
+    razorpayPaymentId?: string;
+    razorpayOrderId?: string;
+    studentName?: string;
+    studentEmail?: string;
+    courseTitle?: string;
+    amount?: number;
+  }) => {
+    try {
+      const res = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...params,
+          upiId: paymentSettings.upiId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.transaction) {
+        recordUpiTransaction({
+          utrNumber: data.transaction.utrNumber,
+          studentName: data.transaction.studentName,
+          studentEmail: data.transaction.studentEmail,
+          courseTitle: data.transaction.courseTitle,
+          amount: data.transaction.amount,
+          upiId: paymentSettings.upiId,
+          status: 'verified',
+        });
+        showToast(data.message || 'Payment successfully verified!');
+        return { success: true, message: data.message, transaction: data.transaction };
+      } else {
+        showToast(data.error || 'Payment verification failed.');
+        return { success: false, message: data.error || 'Verification failed.' };
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Payment verification network error.');
+      return { success: false, message: err.message };
+    }
+  };
+
   const setUserRole = (role: 'student' | 'instructor' | 'admin') => {
     let name = 'Arham Khan';
     let email = 'arham.khan@univer-e.in';
@@ -235,13 +448,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       avatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80';
     }
 
-    setUser(prev => ({
-      ...prev,
-      role,
-      name,
-      email,
-      avatar,
-    }));
+    setUser(prev => {
+      const updated = {
+        ...prev,
+        role,
+        name,
+        email,
+        avatar,
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const adminLogin = (username: string, pass: string): boolean => {
@@ -309,7 +528,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Inquiry marked as ${status}`);
   };
 
-  const enrolledCourses = COURSES.filter(c => user.enrolledCourseIds.includes(c.id));
+  const enrolledCourses = courses.filter(c => user.enrolledCourseIds.includes(c.id));
 
   const enrollCourse = (courseId: string) => {
     if (user.enrolledCourseIds.includes(courseId)) {
@@ -317,15 +536,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
-    const course = COURSES.find(c => c.id === courseId);
-    setUser(prev => ({
-      ...prev,
-      enrolledCourseIds: [...prev.enrolledCourseIds, courseId],
-      progress: {
-        ...prev.progress,
-        [courseId]: { completedLessonIds: [], percent: 0 },
-      },
-    }));
+    const course = courses.find(c => c.id === courseId);
+    setUser(prev => {
+      const updated = {
+        ...prev,
+        enrolledCourseIds: [...prev.enrolledCourseIds, courseId],
+        progress: {
+          ...prev.progress,
+          [courseId]: { completedLessonIds: [], percent: 0 },
+        },
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
 
     showToast(`Successfully enrolled in ${course?.title || 'course'}!`);
     return true;
@@ -365,11 +590,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? currentProg.completedLessonIds
         : [...currentProg.completedLessonIds, lessonId];
 
-      const course = COURSES.find(c => c.id === courseId);
+      const course = courses.find(c => c.id === courseId);
       const totalLessons = course ? course.lessonsCount : 10;
       const percent = Math.min(100, Math.round((completed.length / totalLessons) * 100));
 
-      return {
+      const updated = {
         ...prev,
         progress: {
           ...prev.progress,
@@ -380,6 +605,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           },
         },
       };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
     });
   };
 
@@ -388,7 +617,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const issueCertificate = (courseId: string, scorePercent: number): Certificate => {
-    const course = COURSES.find(c => c.id === courseId);
+    const course = courses.find(c => c.id === courseId);
     const certNum = `UNIVER-E-2026-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newCert: Certificate = {
@@ -404,11 +633,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       verificationUrl: `/certificates/${certNum}`,
     };
 
-    setUser(prev => ({
-      ...prev,
-      completedCourseIds: prev.completedCourseIds.includes(courseId) ? prev.completedCourseIds : [...prev.completedCourseIds, courseId],
-      certificates: [newCert, ...prev.certificates],
-    }));
+    setUser(prev => {
+      const updated = {
+        ...prev,
+        completedCourseIds: prev.completedCourseIds.includes(courseId) ? prev.completedCourseIds : [...prev.completedCourseIds, courseId],
+        certificates: [newCert, ...prev.certificates],
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
 
     showToast(`Official Certificate Issued: ${certNum}`);
     return newCert;
@@ -439,6 +674,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         issueCertificate,
         toastMessage,
         showToast,
+        // Dynamic Catalog & Instructors
+        courses,
+        instructors,
+        addInstructor,
+        deleteInstructor,
+        deleteCourse,
+        deleteLesson,
+        updateCoursePriceAndQuiz,
+        // Security & Premium
+        isPremium: Boolean(user.isPremium),
+        upgradeToPremium,
+        requirePremiumForDownloads,
+        setRequirePremiumForDownloads: handleSetRequirePremiumPolicy,
+        // Contact inquiries
         inquiries,
         submitInquiry,
         updateInquiryStatus,
@@ -450,6 +699,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         transactions,
         recordUpiTransaction,
         updateTransactionStatus,
+        verifyPayment,
       }}
     >
       {children}

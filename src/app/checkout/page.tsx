@@ -32,6 +32,7 @@ export default function CheckoutPage() {
     user,
     paymentSettings,
     recordUpiTransaction,
+    verifyPayment,
   } = useApp();
 
   const [coupon, setCoupon] = useState('');
@@ -91,36 +92,53 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (finalTotal > 0 && paymentMethod === 'upi' && !utrNumber.trim()) {
-      showToast('Please enter your 12-digit UPI Transaction Reference / UTR number.');
-      return;
+    if (finalTotal > 0 && paymentMethod === 'upi') {
+      const cleanUtr = utrNumber.trim();
+      if (!cleanUtr) {
+        showToast('Please enter your 12-digit UPI Transaction Reference / UTR number.');
+        return;
+      }
+      if (!/^\d{12}$/.test(cleanUtr)) {
+        showToast('Indian Bank UTR must be exactly 12 digits (e.g. 431902847192).');
+        return;
+      }
     }
 
     setIsProcessing(true);
 
-    setTimeout(() => {
-      // Record transaction
-      displayItems.forEach(c => {
-        recordUpiTransaction({
-          utrNumber: utrNumber.trim() || `SYS_${Date.now()}`,
-          studentName: user.name,
-          studentEmail: user.email,
-          courseTitle: c.title,
-          amount: c.price,
-          upiId: paymentSettings.upiId,
-          status: 'verified',
+    const runVerification = async () => {
+      try {
+        if (finalTotal > 0) {
+          await verifyPayment({
+            method: paymentMethod === 'upi' ? 'upi' : 'razorpay',
+            utrNumber: paymentMethod === 'upi' ? utrNumber.trim() : undefined,
+            razorpayPaymentId: paymentMethod !== 'upi' ? `pay_${Date.now()}` : undefined,
+            studentName: user.name,
+            studentEmail: user.email,
+            courseTitle: displayItems.map(c => c.title).join(', '),
+            amount: finalTotal,
+          });
+        }
+
+        // Enroll in all purchased courses
+        displayItems.forEach(c => {
+          enrollCourse(c.id);
         });
-        enrollCourse(c.id);
-      });
 
-      setIsProcessing(false);
-      setIsSuccess(true);
-      clearCart();
+        setIsProcessing(false);
+        setIsSuccess(true);
+        clearCart();
 
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 2200);
-    }, 1200);
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2200);
+      } catch (err: any) {
+        setIsProcessing(false);
+        showToast(err.message || 'Payment processing error.');
+      }
+    };
+
+    runVerification();
   };
 
   if (displayItems.length === 0 && !isSuccess) {

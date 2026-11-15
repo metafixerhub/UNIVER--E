@@ -6,12 +6,23 @@ import Link from 'next/link';
 import { Star, Users, BookOpen, Award, ArrowLeft } from 'lucide-react';
 import { INSTRUCTORS, COURSES } from '@/data/courses';
 import { CourseCard } from '@/components/common/CourseCard';
+import { useApp } from '@/context/AppContext';
 
 export default function InstructorDetailPage() {
   const params = useParams();
   const id = params?.id as string;
-  const instructor = INSTRUCTORS[id] || INSTRUCTORS.nur;
-  const instructorCourses = COURSES.filter(c => c.instructor.id === instructor.id || c.instructor.name === instructor.name);
+  const { instructors: appInstructors, courses: appCourses } = useApp();
+
+  const instructor =
+    (appInstructors && appInstructors[id]) ||
+    INSTRUCTORS[id] ||
+    (appInstructors && Object.values(appInstructors)[0]) ||
+    INSTRUCTORS.nur;
+
+  const courseList = appCourses && appCourses.length > 0 ? appCourses : COURSES;
+  const instructorCourses = courseList.filter(
+    c => c.instructor.id === instructor.id || c.instructor.name === instructor.name
+  );
 
   return (
     <div className="bg-[#F5F8FC]/50 min-h-screen py-12">

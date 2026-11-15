@@ -16,8 +16,10 @@ import { COURSES } from '@/data/courses';
 import { CATEGORIES } from '@/data/categories';
 import { CourseCard } from '@/components/common/CourseCard';
 import { Course } from '@/types';
+import { useApp } from '@/context/AppContext';
 
 function CoursesContent() {
+  const { courses: appCourses } = useApp();
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || 'All';
   const initialSearch = searchParams.get('search') || '';
@@ -31,9 +33,10 @@ function CoursesContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showMobileFilter, setShowMobileFilter] = useState(false);
 
-  // Filter & Sort Logic
+  // Filter & Sort Logic using dynamic AppContext courses with fallback
   const filteredCourses = useMemo(() => {
-    return COURSES.filter(course => {
+    const list = appCourses && appCourses.length > 0 ? appCourses : COURSES;
+    return list.filter(course => {
       // Search filter
       if (search.trim()) {
         const q = search.toLowerCase();
@@ -67,7 +70,7 @@ function CoursesContent() {
       if (sortBy === 'newest') return (b.badge === 'New' ? 1 : 0) - (a.badge === 'New' ? 1 : 0);
       return 0;
     });
-  }, [search, selectedCategory, selectedPrice, selectedLevel, minRating, sortBy]);
+  }, [appCourses, search, selectedCategory, selectedPrice, selectedLevel, minRating, sortBy]);
 
   const resetFilters = () => {
     setSearch('');
@@ -77,6 +80,8 @@ function CoursesContent() {
     setMinRating(0);
     setSortBy('popularity');
   };
+
+  const totalCourseCount = (appCourses && appCourses.length > 0) ? appCourses.length : COURSES.length;
 
   return (
     <div className="bg-[#F5F8FC]/50 min-h-screen py-10">
@@ -146,7 +151,7 @@ function CoursesContent() {
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  All Categories ({COURSES.length})
+                  All Categories ({totalCourseCount})
                 </button>
                 {CATEGORIES.filter(c => c.id !== 'more').map(cat => (
                   <button
@@ -223,7 +228,7 @@ function CoursesContent() {
                     <div className="flex items-center text-amber-400">
                       <Star className="w-3.5 h-3.5 fill-amber-400" />
                     </div>
-                    <span>{ratingVal} Stars & above</span>
+                    <span>{ratingVal} Stars &amp; above</span>
                   </button>
                 ))}
               </div>
@@ -371,4 +376,3 @@ export default function CoursesPage() {
     </Suspense>
   );
 }
-

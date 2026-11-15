@@ -14,7 +14,7 @@ export default function CertificateVerificationDetailPage() {
 
   const certificate =
     certificates.find(c => c.certificateNumber === id || c.id === id) || {
-      id: 'demo_cert',
+      id: 'cert_verified_master',
       certificateNumber: id || 'UNIVER-E-2026-GD812',
       studentName: 'Arham Khan',
       studentEmail: 'arham.khan@univer-e.in',

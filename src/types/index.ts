@@ -36,6 +36,14 @@ export interface Review {
   comment: string;
 }
 
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  category?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
 export interface QuizQuestion {
   id: string;
   question: string;
@@ -78,6 +86,9 @@ export interface Course {
     timeLimitMinutes: number;
     questions: QuizQuestion[];
   };
+  flashcards?: Flashcard[];
+  interactiveQuizHtml?: string;
+  isPremiumDownloadOnly?: boolean;
   lastUpdated: string;
   certificateOffered: boolean;
 }
@@ -122,6 +133,7 @@ export interface User {
   email: string;
   role: 'student' | 'instructor' | 'admin';
   avatar: string;
+  isPremium?: boolean;
   enrolledCourseIds: string[];
   completedCourseIds: string[];
   progress: Record<string, { completedLessonIds: string[]; lastWatchedLessonId?: string; percent: number }>;

@@ -26,10 +26,10 @@ import { PaymentModal } from '@/components/common/PaymentModal';
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { wishlistIds, toggleWishlist, addToCart, enrolledCourseIds, showToast } = useApp();
+  const { courses, wishlistIds, toggleWishlist, addToCart, enrolledCourseIds, showToast } = useApp();
 
   const courseId = params?.id as string;
-  const course = COURSES.find(c => c.id === courseId || c.slug === courseId) || COURSES[0];
+  const course = (courses && courses.find(c => c.id === courseId || c.slug === courseId)) || COURSES.find(c => c.id === courseId || c.slug === courseId) || COURSES[0];
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     [course.curriculum[0]?.id || 'sec-1']: true,

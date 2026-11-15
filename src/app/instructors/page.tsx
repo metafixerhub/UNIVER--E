@@ -4,15 +4,19 @@ import React from 'react';
 import Link from 'next/link';
 import { Star, Users, BookOpen, ArrowRight, Award } from 'lucide-react';
 import { INSTRUCTORS } from '@/data/courses';
+import { useApp } from '@/context/AppContext';
 
 export default function InstructorsPage() {
+  const { instructors: appInstructors } = useApp();
+  const allInstructors = appInstructors && Object.keys(appInstructors).length > 0 ? appInstructors : INSTRUCTORS;
+
   return (
     <div className="bg-[#F5F8FC]/50 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#13A8E8] text-xs font-bold">
             <Award className="w-3.5 h-3.5" />
-            <span>Faculty & Mentors</span>
+            <span>Faculty &amp; Mentors</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#082B59] tracking-tight">
             Distinguished Global Faculty
@@ -23,7 +27,7 @@ export default function InstructorsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.values(INSTRUCTORS).map(inst => (
+          {Object.values(allInstructors).map(inst => (
             <div key={inst.id} className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
