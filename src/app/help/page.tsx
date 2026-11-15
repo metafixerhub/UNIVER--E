@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { HelpCircle, Search, ChevronDown, ChevronUp, FileQuestion, BookOpen, CreditCard, Award } from 'lucide-react';
+import { HelpCircle, Search, ChevronDown, ChevronUp, FileQuestion, BookOpen, CreditCard, Award, Mail, MessageSquare } from 'lucide-react';
 import { FAQS } from '@/data/categories';
 
 export default function HelpPage() {
@@ -89,6 +89,38 @@ export default function HelpPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Direct Contact Support Box */}
+        <div className="bg-gradient-to-r from-[#082B59] to-[#0D3B75] text-white rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center sm:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold">
+              <Mail className="w-3.5 h-3.5 text-[#F5A900]" />
+              <span>Dedicated Learner Desk</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white">Still have questions?</h3>
+            <p className="text-xs sm:text-sm text-slate-200">
+              Our academic support team is ready to help with course access, certificates, or 30-day refunds.
+            </p>
+            <div className="pt-1">
+              <a
+                href="mailto:univer-e-services@protonmail.com"
+                className="text-amber-300 hover:text-white font-mono text-sm font-bold underline transition"
+              >
+                univer-e-services@protonmail.com
+              </a>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 flex gap-3">
+            <Link
+              href="/contact"
+              className="px-5 py-3 rounded-xl bg-[#F5A900] hover:bg-[#D99500] text-[#082B59] font-bold text-xs flex items-center gap-2 transition shadow"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Contact Secretariat</span>
+            </Link>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Youtube, Instagram, Facebook, Linkedin, Twitter, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Youtube, Instagram, Facebook, Linkedin, Twitter, CheckCircle2, Mail } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 export const Footer: React.FC = () => {
@@ -45,6 +45,13 @@ export const Footer: React.FC = () => {
             <p className="text-sm text-slate-300 max-w-sm leading-relaxed">
               A modern e-learning platform to build skills, knowledge and a better future for learners, creators and professionals across India and the globe.
             </p>
+
+            <div className="pt-1 text-xs text-slate-300 flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5 text-[#F5A900]" />
+              <a href="mailto:univer-e-services@protonmail.com" className="hover:text-[#F5A900] font-mono transition">
+                univer-e-services@protonmail.com
+              </a>
+            </div>
 
             {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
@@ -144,7 +151,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="/contact" className="hover:text-[#F5A900] transition">
-                  Careers & Team
+                  Careers &amp; Team
                 </Link>
               </li>
               <li>
@@ -189,7 +196,7 @@ export const Footer: React.FC = () => {
 
             <div className="mt-5 space-y-1.5 text-xs text-slate-400">
               <Link href="/help" className="block hover:text-white transition">
-                Help Center & FAQs
+                Help Center &amp; FAQs
               </Link>
               <div className="flex items-center gap-3 pt-1">
                 <Link href="/privacy" className="hover:text-white transition">
@@ -197,7 +204,7 @@ export const Footer: React.FC = () => {
                 </Link>
                 <span>•</span>
                 <Link href="/terms" className="hover:text-white transition">
-                  Terms & Conditions
+                  Terms &amp; Conditions
                 </Link>
               </div>
             </div>
@@ -206,11 +213,11 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright */}
         <div className="pt-8 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 UNIVER-E. All Rights Reserved. Empowering Education in India & Worldwide.</p>
+          <p>© 2026 UNIVER-E. All Rights Reserved. Empowering Education in India &amp; Worldwide.</p>
           <div className="flex items-center gap-4 text-slate-400">
             <span>ISO 9001:2015 Compliant Pedagogical Framework</span>
             <span>•</span>
-            <span>100% Encrypted & Secure Checkout</span>
+            <span>100% Encrypted &amp; Secure Checkout</span>
           </div>
         </div>
       </div>

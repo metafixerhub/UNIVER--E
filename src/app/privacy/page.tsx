@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { ShieldCheck, Lock, Eye, FileText, Mail, Database } from 'lucide-react';
 
 export default function PrivacyPage() {
   return (
@@ -14,30 +15,69 @@ export default function PrivacyPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-[#082B59]">Privacy & Data Governance Policy</h1>
-              <p className="text-xs text-slate-400">Effective Date: November 2026 • Compliant with Indian DPDP Act 2023</p>
+              <p className="text-xs text-slate-400">Effective Date: November 15, 2026 • UNIVER-E Digital Academy</p>
             </div>
           </div>
 
-          <div className="text-xs sm:text-sm text-slate-600 leading-relaxed space-y-4 border-t border-gray-100 pt-6">
-            <h3 className="text-base font-bold text-[#082B59]">1. Information Collection & Purpose</h3>
-            <p>
-              UNIVER-E collects only necessary registration details (name, email address, password hash) and learning metadata (quiz attempts, video progress timestamps, certificate records) solely to personalize student progress and issue verifiable credentials.
-            </p>
+          <div className="text-xs sm:text-sm text-slate-600 leading-relaxed space-y-6 border-t border-gray-100 pt-6">
+            <section className="space-y-2">
+              <h3 className="text-base font-bold text-[#082B59] flex items-center gap-2">
+                <Database className="w-4 h-4 text-[#13A8E8]" />
+                <span>1. Information Collection &amp; Purpose</span>
+              </h3>
+              <p>
+                UNIVER-E Digital Academy collects personal data including student names, email addresses, verified mobile numbers, and learning progress solely to deliver educational courses, issue verified certificates, and maintain student accounts.
+              </p>
+            </section>
 
-            <h3 className="text-base font-bold text-[#082B59]">2. Payment Data & Gateway Security</h3>
-            <p>
-              UNIVER-E never retains or stores raw credit/debit card numbers or UPI MPINs. All transactions are securely routed through PCI-DSS Level 1 certified Indian payment aggregators utilizing 256-bit SSL encryption.
-            </p>
+            <section className="space-y-2">
+              <h3 className="text-base font-bold text-[#082B59] flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[#28A745]" />
+                <span>2. Payment Security &amp; Zero Card Storage</span>
+              </h3>
+              <p>
+                UNIVER-E never retains or stores raw credit/debit card numbers or UPI MPINs. All transactions are securely routed through PCI-DSS Level 1 certified Indian payment aggregators utilizing 256-bit SSL encryption.
+              </p>
+            </section>
 
-            <h3 className="text-base font-bold text-[#082B59]">3. Public Certificate Verification</h3>
-            <p>
-              When a student earns an official UNIVER-E credential, the recipient name, course title, and completion date are recorded in our public verification registry accessible via unique identifier and QR code.
-            </p>
+            <section className="space-y-2">
+              <h3 className="text-base font-bold text-[#082B59] flex items-center gap-2">
+                <Eye className="w-4 h-4 text-[#F5A900]" />
+                <span>3. Public Certificate Verification Registry</span>
+              </h3>
+              <p>
+                When a student successfully earns a certificate, their registered name, course title, completion date, and unique certificate ID are stored in the tamper-evident registry for public employer verification.
+              </p>
+            </section>
 
-            <h3 className="text-base font-bold text-[#082B59]">4. Student Data Rights & Erasure</h3>
-            <p>
-              Learners retain the right to download their full learning transcript, request account anonymization, or contact our Data Protection Officer at privacy@univer-e.in.
-            </p>
+            <section className="space-y-2">
+              <h3 className="text-base font-bold text-[#082B59] flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[#13A8E8]" />
+                <span>4. Student Data Rights &amp; Privacy Officer Contact</span>
+              </h3>
+              <p>
+                Learners retain the right to review their learning transcript, request account anonymization, or file privacy inquiries. Contact our dedicated privacy desk directly at:
+              </p>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-gray-200">
+                <a
+                  href="mailto:univer-e-services@protonmail.com"
+                  className="text-[#13A8E8] font-bold text-sm hover:underline font-mono"
+                >
+                  univer-e-services@protonmail.com
+                </a>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  UNIVER-E Digital Academy Secretariat • Response time: 24–48 business hours
+                </p>
+              </div>
+            </section>
+
+            <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-slate-500">
+              <Link href="/terms" className="text-[#13A8E8] font-bold hover:underline flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5" />
+                <span>View Full Terms &amp; Conditions of Service</span>
+              </Link>
+              <span>Bengaluru, Karnataka, India</span>
+            </div>
           </div>
         </div>
       </div>

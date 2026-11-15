@@ -59,8 +59,10 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-800">Email Inquiries</h4>
-                    <p>support@univer-e.in (Learner Support)</p>
-                    <p>admin@univer-e.in (Direct Administration)</p>
+                    <a href="mailto:univer-e-services@protonmail.com" className="text-[#13A8E8] font-semibold hover:underline block">
+                      univer-e-services@protonmail.com
+                    </a>
+                    <p className="text-[11px] text-slate-500">Learner Support &amp; Official Administration</p>
                   </div>
                 </div>
 
