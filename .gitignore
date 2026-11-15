@@ -37,3 +37,8 @@ atlas-credentials*.env
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase Service Account Secrets
+*firebase-adminsdk*.json
+*-adminsdk-*.json
+serviceAccountKey.json
