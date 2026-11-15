@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   ExternalLink,
   ChevronRight,
+  Settings,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { COURSES } from '@/data/courses';
@@ -48,7 +49,14 @@ export default function StudentDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4 z-10">
+          <div className="flex items-center gap-3 z-10">
+            <Link
+              href="/settings"
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-white/20 shadow-sm"
+            >
+              <Settings className="w-4 h-4 text-[#F5A900]" />
+              <span>Settings</span>
+            </Link>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={user.avatar}

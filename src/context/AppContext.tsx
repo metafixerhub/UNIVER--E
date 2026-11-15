@@ -5,6 +5,7 @@ import {
   Course,
   Certificate,
   User,
+  UserPreferences,
   ContactInquiry,
   PaymentSettings,
   UpiTransaction,
@@ -15,6 +16,9 @@ import { COURSES, INSTRUCTORS } from '@/data/courses';
 
 interface AppContextType {
   user: User;
+  isLoggedIn: boolean;
+  logoutUser: () => void;
+  updateUserSettings: (updates: Partial<User>) => void;
   setUserRole: (role: 'student' | 'instructor' | 'admin') => void;
   registerUser: (userData: { name: string; email: string; phone?: string; role?: 'student' | 'instructor' }) => void;
   loginUser: (userData: { email: string; name?: string; role?: 'student' | 'instructor' | 'admin' }) => void;
@@ -84,12 +88,29 @@ interface AppContextType {
   }) => Promise<{ success: boolean; message: string; transaction?: any }>;
 }
 
+const DEFAULT_PREFERENCES: UserPreferences = {
+  phone: '+91 98765 43210',
+  headline: 'Full Stack & AI Specialist Aspirant',
+  location: 'Bengaluru, India',
+  autoplayNextLesson: true,
+  playbackSpeed: 1.0,
+  downloadQuality: '1080p',
+  autoQuizPrompt: true,
+  emailNotifications: true,
+  smsNotifications: true,
+  twoFactorOtpEnabled: true,
+};
+
 const DEFAULT_USER: User = {
   id: 'usr_arham',
   name: 'Arham Khan',
   email: 'arham.khan@univer-e.in',
   role: 'student',
+  phone: '+91 98765 43210',
+  headline: 'Full Stack & AI Specialist Aspirant',
+  location: 'Bengaluru, India',
   isPremium: false,
+  preferences: DEFAULT_PREFERENCES,
   avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
   enrolledCourseIds: ['ai-fundamentals-python', 'graphic-design-canva-pro'],
   completedCourseIds: ['graphic-design-canva-pro'],
@@ -177,6 +198,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User>(DEFAULT_USER);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [courses, setCourses] = useState<Course[]>(COURSES);
   const [instructors, setInstructors] = useState<Record<string, Instructor>>(INSTRUCTORS);
   const [requirePremiumForDownloads, setRequirePremiumForDownloads] = useState<boolean>(true);
@@ -194,9 +216,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Check saved state on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const savedLogin = localStorage.getItem('univere_is_logged_in');
+      if (savedLogin === 'true') {
+        setIsLoggedIn(true);
+      }
       const savedAuth = sessionStorage.getItem('univere_admin_auth');
       if (savedAuth === 'true') {
         setIsAdminAuthenticated(true);
+        setIsLoggedIn(true);
       }
       const savedPayment = localStorage.getItem('univere_payment_settings');
       if (savedPayment) {
@@ -466,14 +493,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const registerUser = (userData: { name: string; email: string; phone?: string; role?: 'student' | 'instructor' }) => {
+    setIsLoggedIn(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('univere_is_logged_in', 'true');
+    }
     setUser(prev => {
       const updated: User = {
         ...prev,
         id: `usr_${Date.now()}`,
         name: userData.name.trim() || 'Learner',
         email: userData.email.trim().toLowerCase(),
+        phone: userData.phone || prev.phone,
         role: userData.role || 'student',
         isPremium: false,
+        preferences: prev.preferences || DEFAULT_PREFERENCES,
         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userData.name || 'Scholar')}`,
         enrolledCourseIds: prev.enrolledCourseIds || ['ai-fundamentals-python', 'graphic-design-canva-pro'],
         completedCourseIds: prev.completedCourseIds || ['graphic-design-canva-pro'],
@@ -487,6 +520,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const loginUser = (userData: { email: string; name?: string; role?: 'student' | 'instructor' | 'admin' }) => {
+    setIsLoggedIn(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('univere_is_logged_in', 'true');
+    }
     setUser(prev => {
       const updated: User = {
         ...prev,
@@ -502,10 +539,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Signed in as ${userData.name || userData.email}`);
   };
 
+  const logoutUser = () => {
+    setIsLoggedIn(false);
+    setIsAdminAuthenticated(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('univere_is_logged_in');
+      localStorage.removeItem('univere_active_user');
+      sessionStorage.removeItem('univere_admin_auth');
+    }
+    showToast('Signed out of UNIVER-E.');
+  };
+
+  const updateUserSettings = (updates: Partial<User>) => {
+    setUser(prev => {
+      const updated: User = {
+        ...prev,
+        ...updates,
+        preferences: {
+          ...(prev.preferences || DEFAULT_PREFERENCES),
+          ...(updates.preferences || {}),
+        },
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast('Account profile & preferences saved successfully!');
+  };
+
   const adminLogin = (username: string, pass: string): boolean => {
     const cleanUser = username.trim().toLowerCase();
     if (cleanUser === 'nur' && pass === 'nur1438nur') {
       setIsAdminAuthenticated(true);
+      setIsLoggedIn(true);
       setUser(prev => ({
         ...prev,
         role: 'admin',
@@ -514,6 +581,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('univere_admin_auth', 'true');
+        localStorage.setItem('univere_is_logged_in', 'true');
       }
       showToast('Admin root authentication verified!');
       return true;
@@ -524,11 +592,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const adminLogout = () => {
     setIsAdminAuthenticated(false);
-    setUserRole('student');
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('univere_admin_auth');
-    }
-    showToast('Logged out of Admin Portal.');
+    logoutUser();
   };
 
   const submitInquiry = async (data: { name: string; email: string; message: string }) => {
@@ -692,6 +756,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         user,
+        isLoggedIn,
+        logoutUser,
+        updateUserSettings,
         setUserRole,
         registerUser,
         loginUser,

@@ -127,13 +127,30 @@ export interface Certificate {
   verificationUrl: string;
 }
 
+export interface UserPreferences {
+  phone?: string;
+  headline?: string;
+  location?: string;
+  autoplayNextLesson: boolean;
+  playbackSpeed: number;
+  downloadQuality: '1080p' | '720p' | '480p';
+  autoQuizPrompt: boolean;
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  twoFactorOtpEnabled: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'student' | 'instructor' | 'admin';
   avatar: string;
+  phone?: string;
+  headline?: string;
+  location?: string;
   isPremium?: boolean;
+  preferences?: UserPreferences;
   enrolledCourseIds: string[];
   completedCourseIds: string[];
   progress: Record<string, { completedLessonIds: string[]; lastWatchedLessonId?: string; percent: number }>;

@@ -145,8 +145,8 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/instructor/register" className="hover:text-[#F5A900] transition">
-                  Become an Instructor
+                <Link href="/instructors" className="hover:text-[#F5A900] transition">
+                  Academic Faculty
                 </Link>
               </li>
               <li>

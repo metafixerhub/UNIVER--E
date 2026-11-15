@@ -20,7 +20,8 @@ import {
   LogOut,
   ShieldCheck,
   Briefcase,
-  Mail
+  Mail,
+  Settings
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { CATEGORIES, DEPARTMENTS } from '@/data/categories';
@@ -28,7 +29,7 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/categories';
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, setUserRole, cart, searchQuery, setSearchQuery, wishlistIds, isAdminAuthenticated } = useApp();
+  const { user, isLoggedIn, logoutUser, cart, searchQuery, setSearchQuery, wishlistIds, isAdminAuthenticated } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -290,118 +291,128 @@ export const Navbar: React.FC = () => {
                 )}
               </Link>
 
-              {/* Role-specific Quick Links */}
-              {user.role === 'admin' ? (
+              {/* Role-specific Quick Links (Only if authenticated with that role) */}
+              {user.role === 'admin' && isAdminAuthenticated && (
                 <Link
-                  href={isAdminAuthenticated ? "/admin" : "/admin/login"}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"
+                  href="/admin"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"
                 >
-                  <ShieldCheck className="w-4 h-4" />
-                  Admin Panel
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Admin</span>
                 </Link>
-              ) : user.role === 'instructor' ? (
-                <Link
-                  href="/instructor/dashboard"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-[#082B59] text-white shadow-sm hover:bg-navy-800"
-                >
-                  <Briefcase className="w-4 h-4" />
-                  Instructor Portal
-                </Link>
-              ) : null}
+              )}
 
-              {/* Auth / Profile Area */}
-              <div className="relative" ref={userRef}>
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1 pl-2 pr-3 rounded-full border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 transition"
-                >
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="hidden md:inline text-xs font-bold text-slate-800 max-w-[100px] truncate">
-                    {user.name}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </button>
-
-                {userDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-xs text-slate-400">Signed in as</p>
-                      <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
-                      <span className="inline-block px-2 py-0.5 mt-1 text-[10px] font-bold uppercase rounded bg-blue-50 text-[#13A8E8]">
-                        Role: {user.role}
-                      </span>
+              {/* Auth / Profile Area: Shown only if logged in */}
+              {isLoggedIn ? (
+                <div className="relative" ref={userRef}>
+                  <button
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-full border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 transition cursor-pointer shadow-sm"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0 border border-amber-300">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                     </div>
+                    <span className="hidden md:inline text-xs font-bold text-slate-800 max-w-[110px] truncate">
+                      {user.name}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
 
-                    <div className="py-1">
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59]"
-                      >
-                        <GraduationCap className="w-4 h-4 text-[#13A8E8]" />
-                        <span>Student Dashboard</span>
-                      </Link>
+                  {userDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-[11px] text-slate-400 font-medium">Signed in as</p>
+                        <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      </div>
 
-                      <Link
-                        href="/instructor/dashboard"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59]"
-                      >
-                        <Briefcase className="w-4 h-4 text-[#F5A900]" />
-                        <span>Instructor Portal</span>
-                      </Link>
+                      <div className="py-1">
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59] transition"
+                        >
+                          <GraduationCap className="w-4 h-4 text-[#13A8E8]" />
+                          <span>Student Dashboard</span>
+                        </Link>
 
-                      <Link
-                        href={isAdminAuthenticated ? "/admin" : "/admin/login"}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59]"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                        <span>Admin Console</span>
-                      </Link>
+                        <Link
+                          href="/certificates"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59] transition"
+                        >
+                          <Award className="w-4 h-4 text-[#28A745]" />
+                          <span>My Certificates</span>
+                        </Link>
 
-                      <Link
-                        href="/certificates"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59]"
-                      >
-                        <Award className="w-4 h-4 text-[#28A745]" />
-                        <span>My Certificates</span>
-                      </Link>
+                        <Link
+                          href="/settings"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-800 hover:bg-[#F5F8FC] hover:text-[#13A8E8] transition"
+                        >
+                          <Settings className="w-4 h-4 text-[#F5A900]" />
+                          <span>Account Settings</span>
+                        </Link>
+
+                        {/* Dedicated admin/instructor links ONLY if holding that role */}
+                        {user.role === 'instructor' && (
+                          <Link
+                            href="/instructor/dashboard"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-[#F5F8FC]"
+                          >
+                            <Briefcase className="w-4 h-4 text-[#F5A900]" />
+                            <span>Instructor Studio</span>
+                          </Link>
+                        )}
+
+                        {user.role === 'admin' && (
+                          <Link
+                            href={isAdminAuthenticated ? "/admin" : "/admin/login"}
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-[#F5F8FC]"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            <span>Admin Portal</span>
+                          </Link>
+                        )}
+                      </div>
+
+                      <div className="border-t border-gray-100 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            logoutUser();
+                            router.push('/login');
+                          }}
+                          className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 cursor-pointer transition"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="border-t border-gray-100 pt-1">
-                      <Link
-                        href="/login"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Sign Out / Switch</span>
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Login / Register CTAs */}
-              <div className="hidden sm:flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="px-3.5 py-2 text-xs font-bold text-[#082B59] hover:text-[#13A8E8] transition"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-4 py-2 text-xs font-bold bg-[#F5A900] text-[#082B59] hover:bg-[#D99500] rounded-lg transition shadow-sm hover:shadow"
-                >
-                  Register
-                </Link>
-              </div>
+                  )}
+                </div>
+              ) : (
+                /* Guest State: Clean Log In & Register CTAs without avatar clutter */
+                <div className="hidden sm:flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 text-xs font-bold text-[#082B59] hover:text-[#13A8E8] transition rounded-xl hover:bg-slate-50"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 text-xs font-bold bg-[#F5A900] text-[#082B59] hover:bg-[#D99500] rounded-xl transition shadow-sm hover:shadow"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
 
               {/* Mobile Hamburger Toggle */}
               <button
@@ -453,6 +464,29 @@ export const Navbar: React.FC = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
             </form>
 
+            {isLoggedIn && (
+              <div className="p-3 rounded-2xl bg-slate-50 border border-gray-200 flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 border border-amber-300 flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="text-xs font-bold text-[#082B59] truncate">{user.name}</div>
+                    <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
+                  </div>
+                </div>
+                <Link
+                  href="/settings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg bg-white border border-gray-200 text-slate-600 hover:text-[#13A8E8]"
+                  title="Settings"
+                >
+                  <Settings className="w-4 h-4 text-[#F5A900]" />
+                </Link>
+              </div>
+            )}
+
             <div className="space-y-1">
               <Link
                 href="/"
@@ -482,27 +516,40 @@ export const Navbar: React.FC = () => {
               >
                 University Departments
               </Link>
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-medium text-slate-800 hover:bg-slate-50"
-              >
-                Student Dashboard
-              </Link>
-              <Link
-                href="/instructor/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-medium text-slate-800 hover:bg-slate-50"
-              >
-                Instructor Dashboard
-              </Link>
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-medium text-slate-800 hover:bg-slate-50"
-              >
-                Admin Panel
-              </Link>
+              {isLoggedIn && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg font-medium text-slate-800 hover:bg-slate-50"
+                  >
+                    Student Dashboard
+                  </Link>
+                  <Link
+                    href="/certificates"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg font-medium text-slate-800 hover:bg-slate-50"
+                  >
+                    My Certificates
+                  </Link>
+                  <Link
+                    href="/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg font-bold text-[#082B59] hover:bg-slate-50"
+                  >
+                    Account Settings
+                  </Link>
+                </>
+              )}
+              {user.role === 'admin' && isAdminAuthenticated && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50"
+                >
+                  Admin Portal
+                </Link>
+              )}
               <Link
                 href="/about"
                 onClick={() => setMobileMenuOpen(false)}
@@ -519,28 +566,44 @@ export const Navbar: React.FC = () => {
               </Link>
             </div>
 
-            <div className="pt-3 border-t border-gray-100 flex gap-2">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex-1 text-center py-2 text-sm font-bold border border-gray-300 rounded-lg text-[#082B59]"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex-1 text-center py-2 text-sm font-bold bg-[#F5A900] text-[#082B59] rounded-lg"
-              >
-                Register
-              </Link>
+            <div className="pt-3 border-t border-gray-100">
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logoutUser();
+                    router.push('/login');
+                  }}
+                  className="w-full text-center py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl border border-red-200 cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex-1 text-center py-2 text-sm font-bold border border-gray-300 rounded-lg text-[#082B59]"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex-1 text-center py-2 text-sm font-bold bg-[#F5A900] text-[#082B59] rounded-lg"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}
       </header>
 
       {/* Mobile Bottom Navigation Bar for quick student access */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg px-4 py-2 flex items-center justify-around">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg px-3 py-2 flex items-center justify-around">
         <Link
           href="/"
           className={`flex flex-col items-center text-[10px] ${
@@ -566,7 +629,16 @@ export const Navbar: React.FC = () => {
           }`}
         >
           <GraduationCap className="w-5 h-5 mb-0.5" />
-          <span>My Learnings</span>
+          <span>Dashboard</span>
+        </Link>
+        <Link
+          href="/settings"
+          className={`flex flex-col items-center text-[10px] ${
+            isActive('/settings') ? 'text-[#13A8E8] font-bold' : 'text-slate-500'
+          }`}
+        >
+          <Settings className="w-5 h-5 mb-0.5" />
+          <span>Settings</span>
         </Link>
         <Link
           href="/checkout"
