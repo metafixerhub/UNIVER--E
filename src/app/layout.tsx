@@ -4,6 +4,7 @@ import { AppProvider } from '@/context/AppContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Toast } from '@/components/common/Toast';
+import { AiChatbot } from '@/components/chat/AiChatbot';
 
 export const metadata: Metadata = {
   title: 'UNIVER-E — Learn Today. Lead Tomorrow. | Next-Gen E-Learning Platform',
@@ -33,6 +34,7 @@ export default function RootLayout({
           <main className="flex-1 pb-16 lg:pb-0">{children}</main>
           <Footer />
           <Toast />
+          <AiChatbot />
         </AppProvider>
       </body>
     </html>

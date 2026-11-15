@@ -19,7 +19,8 @@ import {
   Heart,
   LogOut,
   ShieldCheck,
-  Briefcase
+  Briefcase,
+  Mail
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { CATEGORIES, DEPARTMENTS } from '@/data/categories';
@@ -87,33 +88,27 @@ export const Navbar: React.FC = () => {
             <span className="hidden md:inline text-gray-300">Over 500+ Industry-Certified Programs</span>
           </div>
 
-          {/* Quick Interactive Persona Switcher for pair-programming and client demo */}
-          <div className="flex items-center gap-1.5 bg-[#051C3A] px-2.5 py-0.5 rounded-full border border-navy-700">
-            <span className="text-[11px] text-gray-300">Switch Persona:</span>
-            <button
-              onClick={() => setUserRole('student')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
-                user.role === 'student' ? 'bg-[#F5A900] text-[#082B59]' : 'text-gray-300 hover:text-white'
-              }`}
+          {/* Official Secretariat & Certificate Utility Strip */}
+          <div className="flex items-center gap-4 text-[11px] text-gray-300">
+            <a
+              href="mailto:univer-e-services@protonmail.com"
+              className="hidden lg:flex items-center gap-1.5 hover:text-white transition font-mono"
             >
-              Student
-            </button>
-            <button
-              onClick={() => setUserRole('instructor')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
-                user.role === 'instructor' ? 'bg-[#F5A900] text-[#082B59]' : 'text-gray-300 hover:text-white'
-              }`}
+              <Mail className="w-3.5 h-3.5 text-[#F5A900]" />
+              <span>univer-e-services@protonmail.com</span>
+            </a>
+            <span className="hidden lg:inline text-navy-400">•</span>
+            <Link href="/certificates" className="hover:text-amber-300 transition">
+              Verify Certificate
+            </Link>
+            <span className="text-navy-400">•</span>
+            <a
+              href="/univer-e.apk"
+              download
+              className="flex items-center gap-1 text-emerald-400 font-bold hover:text-emerald-300 transition"
             >
-              Instructor
-            </button>
-            <button
-              onClick={() => { if (isAdminAuthenticated) { setUserRole('admin'); } else { router.push('/admin/login'); } }}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
-                user.role === 'admin' ? 'bg-[#F5A900] text-[#082B59]' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Admin
-            </button>
+              <span>Get Android APK</span>
+            </a>
           </div>
         </div>
       </div>
@@ -259,6 +254,19 @@ export const Navbar: React.FC = () => {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3 sm:gap-4">
+              {/* AI Search Anywhere Button */}
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open-univer-e-ai'))}
+                aria-label="Search Anywhere with AI"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-bold shadow-sm hover:opacity-95 transition"
+                style={{
+                  background: 'linear-gradient(135deg, #082B59 0%, #13A8E8 50%, #F5A900 100%)',
+                }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                <span>Search Anywhere</span>
+              </button>
+
               {/* Quick Search Button */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
