@@ -10,13 +10,17 @@ export default function InstructorLoginPage() {
   const router = useRouter();
   const { setUserRole, showToast } = useApp();
 
-  const [email, setEmail] = useState('nur.mohammad@univer-e.in');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      showToast('Please enter your faculty credentials.');
+      return;
+    }
     setUserRole('instructor');
-    showToast('Signed in successfully as Instructor');
+    showToast('Signed in successfully to Faculty Workspace');
     router.push('/instructor/dashboard');
   };
 
@@ -29,37 +33,45 @@ export default function InstructorLoginPage() {
             <span>Faculty Login</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#082B59]">Instructor Workspace</h1>
-          <p className="text-xs text-slate-500">Sign in to manage your students, lectures, and royalties.</p>
+          <p className="text-xs text-slate-500">Sign in to manage your students, lectures, and curriculum.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4 text-xs">
           <div>
             <label className="block font-bold text-slate-700 mb-1">Faculty Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A8E8]"
-            />
+            <div className="relative">
+              <input
+                type="email"
+                required
+                placeholder="faculty@univer-e.in"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A8E8]"
+              />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+            </div>
           </div>
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A8E8]"
-            />
+            <div className="relative">
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A8E8]"
+              />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+            </div>
           </div>
 
           <button
             type="submit"
             className="w-full py-3.5 bg-[#082B59] hover:bg-navy-800 text-white font-black text-sm rounded-xl shadow-md transition"
           >
-            Enter Instructor Portal →
+            Enter Instructor Portal &rarr;
           </button>
         </form>
 

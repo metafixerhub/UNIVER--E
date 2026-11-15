@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#082B59]">Admin Operations Gateway</h1>
           <p className="text-xs text-slate-500">
-            Protected Console. Authorized Root Access Only.
+            Protected Governance Console. Authorized Root Access Only.
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleAdminSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Admin Username</label>
+            <label className="block font-bold text-slate-700 mb-1">Administrator ID</label>
             <div className="relative">
               <input
                 type="text"
@@ -80,14 +80,14 @@ export default function AdminLoginPage() {
                 placeholder="Enter administrator ID"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#082B59]"
               />
               <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Admin Root Password</label>
+            <label className="block font-bold text-slate-700 mb-1">Root Security Password</label>
             <div className="relative">
               <input
                 type="password"
@@ -95,35 +95,30 @@ export default function AdminLoginPage() {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#082B59]"
               />
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-50 border border-gray-200 text-[11px] text-slate-500">
-            <strong>Access Credentials:</strong> <br />
-            Username: <code className="text-[#082B59] font-mono font-bold">nur</code> &bull; Password: <code className="text-[#082B59] font-mono font-bold">nur1438nur</code>
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-75"
+            className="w-full py-3.5 bg-[#082B59] hover:bg-[#051C3A] text-white font-black text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-75"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
                 <KeyRound className="w-4 h-4" />
-                <span>Verify & Enter Admin Console →</span>
+                <span>Verify &amp; Enter Admin Console &rarr;</span>
               </>
             )}
           </button>
         </form>
 
         <div className="pt-2 text-center text-[11px] text-slate-400">
-          All access attempts are logged and encrypted.
+          All access attempts are cryptographically verified and monitored.
         </div>
       </div>
     </div>

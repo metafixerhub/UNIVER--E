@@ -53,7 +53,7 @@ export default function LoginPage() {
     if (identifier.toLowerCase() === 'nur' && password === 'nur1438nur') {
       const ok = adminLogin('nur', 'nur1438nur');
       if (ok) {
-        showToast('Welcome, Administrator Nur! Redirecting to Admin Governance Console...');
+        showToast('Welcome, Administrator! Redirecting to Admin Governance Console...');
         router.push('/admin');
         return;
       }

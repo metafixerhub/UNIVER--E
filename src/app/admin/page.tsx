@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
   const [verifyResult, setVerifyResult] = useState<any>(null);
 
   // Quick inline login state if unauthenticated
-  const [gateUser, setGateUser] = useState('nur');
+  const [gateUser, setGateUser] = useState('');
   const [gatePass, setGatePass] = useState('');
   const [gateError, setGateError] = useState(false);
 
@@ -428,12 +428,12 @@ export default function AdminDashboardPage() {
 
           <form onSubmit={handleGateSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Administrator Username</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Administrator ID</label>
               <input
                 type="text"
                 value={gateUser}
                 onChange={e => setGateUser(e.target.value)}
-                placeholder="nur"
+                placeholder="Enter administrator ID"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#082B59]"
                 required
               />
@@ -445,7 +445,7 @@ export default function AdminDashboardPage() {
                 type="password"
                 value={gatePass}
                 onChange={e => setGatePass(e.target.value)}
-                placeholder="Enter root password"
+                placeholder="••••••••••••"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#082B59]"
                 required
               />
@@ -2018,8 +2018,8 @@ export default function AdminDashboardPage() {
                     <td className="p-3"><span className="text-[#28A745] font-bold">● Active</span></td>
                   </tr>
                   <tr>
-                    <td className="p-3 font-bold text-slate-900">Nur Mohammad</td>
-                    <td className="p-3">nur@univer-e.in</td>
+                    <td className="p-3 font-bold text-slate-900">Governance Security Officer</td>
+                    <td className="p-3 font-mono">security@univer-e.in</td>
                     <td className="p-3"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">Root Admin</span></td>
                     <td className="p-3"><span className="text-[#28A745] font-bold">● Root Verified</span></td>
                   </tr>
