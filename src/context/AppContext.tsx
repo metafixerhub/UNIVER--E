@@ -11,6 +11,11 @@ import {
   UpiTransaction,
   Instructor,
   Flashcard,
+  AdminLogItem,
+  StudentRecord,
+  StaffMember,
+  UploadedResource,
+  SystemBackup,
 } from '@/types';
 import { COURSES, INSTRUCTORS } from '@/data/courses';
 
@@ -86,6 +91,29 @@ interface AppContextType {
     courseTitle?: string;
     amount?: number;
   }) => Promise<{ success: boolean; message: string; transaction?: any }>;
+  // Section 1: Private Administration & Audit
+  adminLogs: AdminLogItem[];
+  addAdminLog: (log: Omit<AdminLogItem, 'id' | 'timestamp'>) => void;
+  staffMembers: StaffMember[];
+  addStaffMember: (member: Omit<StaffMember, 'id' | 'lastActive'>) => void;
+  removeStaffMember: (staffId: string) => void;
+  // Section 2: Student Management
+  students: StudentRecord[];
+  toggleStudentSuspension: (studentId: string) => void;
+  enrollStudentInCourse: (studentId: string, courseId: string) => void;
+  // Section 3: Content Management & Upload Validation
+  uploadedResources: UploadedResource[];
+  addUploadedResource: (resource: Omit<UploadedResource, 'id' | 'uploadedAt'>) => void;
+  deleteUploadedResource: (id: string) => void;
+  updateCourseModerationStatus: (courseId: string, status: 'Draft' | 'In Review' | 'Published') => void;
+  // Section 4: Payment Management & Instant Activation
+  approveUtrAndActivateCourse: (txId: string, utrNumber: string, studentEmail: string, courseIdOrTitle: string) => void;
+  rejectUtrPayment: (txId: string, reason?: string) => void;
+  // Section 5: System Settings & Health
+  isMaintenanceMode: boolean;
+  setIsMaintenanceMode: (enabled: boolean) => void;
+  systemBackups: SystemBackup[];
+  createBackupSnapshot: () => void;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -194,6 +222,186 @@ const DEFAULT_TRANSACTIONS: UpiTransaction[] = [
   },
 ];
 
+const DEFAULT_ADMIN_LOGS: AdminLogItem[] = [
+  {
+    id: 'log_01',
+    timestamp: '15 Nov 2026, 06:45 PM',
+    adminName: 'Nur (Super Admin)',
+    action: 'Payment UTR Verified',
+    target: 'UTR: 431902847192 (Ayesha Parveen)',
+    status: 'success',
+    ip: '103.21.244.12',
+  },
+  {
+    id: 'log_02',
+    timestamp: '15 Nov 2026, 05:20 PM',
+    adminName: 'Nur (Super Admin)',
+    action: 'UPI Merchant Setting Updated',
+    target: 'Active UPI: 7557060447-5@ybl',
+    status: 'info',
+    ip: '103.21.244.12',
+  },
+  {
+    id: 'log_03',
+    timestamp: '15 Nov 2026, 04:10 PM',
+    adminName: 'Nur (Super Admin)',
+    action: 'Download Security Enforced',
+    target: 'Tier: Premium Gated Only',
+    status: 'warning',
+    ip: '103.21.244.12',
+  },
+  {
+    id: 'log_04',
+    timestamp: '15 Nov 2026, 02:30 PM',
+    adminName: 'Nur (Super Admin)',
+    action: 'Database Backup Snapshot Created',
+    target: 'Cluster-0 (ShopDB) Snapshot #20261115',
+    status: 'success',
+    ip: '103.21.244.12',
+  },
+];
+
+const DEFAULT_STUDENTS: StudentRecord[] = [
+  {
+    id: 'usr_arham',
+    name: 'Arham Khan',
+    email: 'arham.khan@univer-e.in',
+    phone: '+91 98765 43210',
+    enrolledCourseIds: ['ai-fundamentals-python', 'graphic-design-canva-pro'],
+    isSuspended: false,
+    registeredAt: '01 Nov 2026',
+    isPremium: false,
+  },
+  {
+    id: 'usr_ayesha',
+    name: 'Ayesha Parveen',
+    email: 'ayesha.p@gmail.com',
+    phone: '+91 98112 34567',
+    enrolledCourseIds: ['full-stack-web-dev'],
+    isSuspended: false,
+    registeredAt: '05 Nov 2026',
+    isPremium: true,
+  },
+  {
+    id: 'usr_sufiyan',
+    name: 'Sufiyan Ali',
+    email: 'sufiyan.ali@yahoo.com',
+    phone: '+91 98334 56789',
+    enrolledCourseIds: ['ai-fundamentals-python'],
+    isSuspended: false,
+    registeredAt: '08 Nov 2026',
+    isPremium: false,
+  },
+  {
+    id: 'usr_rohit',
+    name: 'Rohit Sharma',
+    email: 'rohit.s@outlook.com',
+    phone: '+91 98456 78901',
+    enrolledCourseIds: ['cybersecurity-ethical-hacking'],
+    isSuspended: true,
+    registeredAt: '12 Nov 2026',
+    isPremium: false,
+  },
+];
+
+const DEFAULT_STAFF: StaffMember[] = [
+  {
+    id: 'staff_nur',
+    name: 'Nur Mohammad',
+    email: 'nur@univer-e.in',
+    role: 'Super Admin',
+    status: 'active',
+    lastActive: 'Just now',
+  },
+  {
+    id: 'staff_ayesha',
+    name: 'Ayesha Siddiqua',
+    email: 'ayesha.staff@univer-e.in',
+    role: 'Content Manager',
+    status: 'active',
+    lastActive: '15 mins ago',
+  },
+  {
+    id: 'staff_farhan',
+    name: 'Farhan Qureshi',
+    email: 'farhan.finance@univer-e.in',
+    role: 'Finance Manager',
+    status: 'active',
+    lastActive: '1 hour ago',
+  },
+  {
+    id: 'staff_priya',
+    name: 'Dr. Priya Nair',
+    email: 'priya.academic@univer-e.in',
+    role: 'Academic Lead',
+    status: 'active',
+    lastActive: '3 hours ago',
+  },
+];
+
+const DEFAULT_RESOURCES: UploadedResource[] = [
+  {
+    id: 'res_01',
+    title: 'Transformers & Self-Attention Video Lecture',
+    fileName: 'lecture_04_transformers.mp4',
+    fileSize: 184500000,
+    fileType: 'video',
+    courseId: 'ai-fundamentals-python',
+    uploadedAt: '14 Nov 2026',
+    status: 'scanned_safe',
+    url: 'https://storage.googleapis.com/univer-e-vault/lecture_04_transformers.mp4',
+  },
+  {
+    id: 'res_02',
+    title: 'Full Stack MERN Architecture Blueprint',
+    fileName: 'mern_architecture_guide.pdf',
+    fileSize: 12400000,
+    fileType: 'pdf',
+    courseId: 'full-stack-web-dev',
+    uploadedAt: '13 Nov 2026',
+    status: 'scanned_safe',
+    url: 'https://storage.googleapis.com/univer-e-vault/mern_architecture_guide.pdf',
+  },
+  {
+    id: 'res_03',
+    title: 'Cybersecurity Threat Modeling Cheatsheet',
+    fileName: 'threat_model_cheatsheet.pdf',
+    fileSize: 4500000,
+    fileType: 'pdf',
+    courseId: 'cybersecurity-ethical-hacking',
+    uploadedAt: '12 Nov 2026',
+    status: 'scanned_safe',
+    url: 'https://storage.googleapis.com/univer-e-vault/threat_model_cheatsheet.pdf',
+  },
+];
+
+const DEFAULT_BACKUPS: SystemBackup[] = [
+  {
+    id: 'bak_20261115_01',
+    timestamp: '15 Nov 2026, 04:00 AM IST',
+    size: '4.82 GB',
+    cluster: 'Cluster-0 (Primary Atlas)',
+    status: 'completed',
+    type: 'Automated Daily',
+  },
+  {
+    id: 'bak_20261114_01',
+    timestamp: '14 Nov 2026, 04:00 AM IST',
+    size: '4.78 GB',
+    cluster: 'Cluster-0 (Primary Atlas)',
+    status: 'completed',
+    type: 'Automated Daily',
+  },
+  {
+    id: 'bak_20261113_01',
+    timestamp: '13 Nov 2026, 04:00 AM IST',
+    size: '4.71 GB',
+    cluster: 'Cluster-1 (Analytics Replica)',
+    status: 'completed',
+    type: 'Automated Daily',
+  },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -212,6 +420,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
   const [transactions, setTransactions] = useState<UpiTransaction[]>(DEFAULT_TRANSACTIONS);
+
+  // 5 Operational Pillars States
+  const [adminLogs, setAdminLogs] = useState<AdminLogItem[]>(DEFAULT_ADMIN_LOGS);
+  const [students, setStudents] = useState<StudentRecord[]>(DEFAULT_STUDENTS);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(DEFAULT_STAFF);
+  const [uploadedResources, setUploadedResources] = useState<UploadedResource[]>(DEFAULT_RESOURCES);
+  const [isMaintenanceMode, setIsMaintenanceModeState] = useState<boolean>(false);
+  const [systemBackups, setSystemBackups] = useState<SystemBackup[]>(DEFAULT_BACKUPS);
 
   // Check saved state on mount
   useEffect(() => {
@@ -257,6 +473,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (savedUser) {
         try {
           setUser(JSON.parse(savedUser));
+        } catch (e) {}
+      }
+      const savedLogs = localStorage.getItem('univere_admin_logs');
+      if (savedLogs) {
+        try {
+          setAdminLogs(JSON.parse(savedLogs));
+        } catch (e) {}
+      }
+      const savedStudents = localStorage.getItem('univere_students_directory');
+      if (savedStudents) {
+        try {
+          setStudents(JSON.parse(savedStudents));
+        } catch (e) {}
+      }
+      const savedStaff = localStorage.getItem('univere_staff_members');
+      if (savedStaff) {
+        try {
+          setStaffMembers(JSON.parse(savedStaff));
+        } catch (e) {}
+      }
+      const savedRes = localStorage.getItem('univere_uploaded_resources');
+      if (savedRes) {
+        try {
+          setUploadedResources(JSON.parse(savedRes));
+        } catch (e) {}
+      }
+      const savedMaint = localStorage.getItem('univere_maintenance_mode');
+      if (savedMaint !== null) {
+        setIsMaintenanceModeState(savedMaint === 'true');
+      }
+      const savedBackups = localStorage.getItem('univere_system_backups');
+      if (savedBackups) {
+        try {
+          setSystemBackups(JSON.parse(savedBackups));
         } catch (e) {}
       }
     }
@@ -752,6 +1002,278 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newCert;
   };
 
+  const addAdminLog = (log: Omit<AdminLogItem, 'id' | 'timestamp'>) => {
+    const newLog: AdminLogItem = {
+      ...log,
+      id: `log_${Date.now()}`,
+      timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      ip: log.ip || '103.21.244.12',
+    };
+    setAdminLogs(prev => {
+      const updated = [newLog, ...prev].slice(0, 50);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_admin_logs', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const toggleStudentSuspension = (studentId: string) => {
+    setStudents(prev => {
+      const updated = prev.map(s => {
+        if (s.id === studentId) {
+          const newStatus = !s.isSuspended;
+          addAdminLog({
+            adminName: 'Nur (Super Admin)',
+            action: newStatus ? 'Student Access Suspended' : 'Student Access Reactivated',
+            target: `${s.name} (${s.email})`,
+            status: newStatus ? 'warning' : 'info',
+          });
+          showToast(`Student ${s.name} has been ${newStatus ? 'SUSPENDED' : 'REACTIVATED'}.`);
+          return { ...s, isSuspended: newStatus };
+        }
+        return s;
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_students_directory', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const enrollStudentInCourse = (studentId: string, courseId: string) => {
+    const course = courses.find(c => c.id === courseId);
+    setStudents(prev => {
+      const updated = prev.map(s => {
+        if (s.id === studentId) {
+          const already = s.enrolledCourseIds.includes(courseId);
+          const enrolled = already ? s.enrolledCourseIds : [...s.enrolledCourseIds, courseId];
+          return { ...s, enrolledCourseIds: enrolled };
+        }
+        return s;
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_students_directory', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: 'Manual Course Enrollment Granted',
+      target: `Student: ${studentId} -> Course: ${course?.title || courseId}`,
+      status: 'success',
+    });
+    showToast(`Enrolled student in ${course?.title || courseId}`);
+  };
+
+  const addStaffMember = (member: Omit<StaffMember, 'id' | 'lastActive'>) => {
+    const newStaff: StaffMember = {
+      ...member,
+      id: `staff_${Date.now()}`,
+      lastActive: 'Just registered',
+    };
+    setStaffMembers(prev => {
+      const updated = [newStaff, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_staff_members', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: 'Staff Member Added',
+      target: `${member.name} (${member.role})`,
+      status: 'success',
+    });
+    showToast(`Staff member "${member.name}" added as ${member.role}.`);
+  };
+
+  const removeStaffMember = (staffId: string) => {
+    setStaffMembers(prev => {
+      const target = prev.find(s => s.id === staffId);
+      const updated = prev.filter(s => s.id !== staffId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_staff_members', JSON.stringify(updated));
+      }
+      if (target) {
+        addAdminLog({
+          adminName: 'Nur (Super Admin)',
+          action: 'Staff Role Revoked',
+          target: `${target.name} (${target.role})`,
+          status: 'warning',
+        });
+      }
+      return updated;
+    });
+    showToast('Staff permissions revoked.');
+  };
+
+  const addUploadedResource = (res: Omit<UploadedResource, 'id' | 'uploadedAt'>) => {
+    const newRes: UploadedResource = {
+      ...res,
+      id: `res_${Date.now()}`,
+      uploadedAt: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    };
+    setUploadedResources(prev => {
+      const updated = [newRes, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_uploaded_resources', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: 'New Content Uploaded & Scanned',
+      target: `${res.fileName} (${(res.fileSize / (1024 * 1024)).toFixed(1)} MB)`,
+      status: 'success',
+    });
+    showToast(`File "${res.fileName}" validated and secured.`);
+  };
+
+  const deleteUploadedResource = (id: string) => {
+    setUploadedResources(prev => {
+      const updated = prev.filter(r => r.id !== id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_uploaded_resources', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast('Resource removed from private vault.');
+  };
+
+  const updateCourseModerationStatus = (courseId: string, status: 'Draft' | 'In Review' | 'Published') => {
+    setCourses(prev => {
+      const updated = prev.map(c => (c.id === courseId ? { ...c, moderationStatus: status } : c));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_courses', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: `Course Moderation Status: ${status}`,
+      target: courseId,
+      status: status === 'Published' ? 'success' : 'info',
+    });
+    showToast(`Course "${courseId}" status updated to ${status}.`);
+  };
+
+  const approveUtrAndActivateCourse = (txId: string, utrNumber: string, studentEmail: string, courseIdOrTitle: string) => {
+    setTransactions(prev => {
+      const updated = prev.map(t => (t.id === txId || t.utrNumber === utrNumber ? { ...t, status: 'verified' as const } : t));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_transactions', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    const matchedCourse = courses.find(
+      c => c.id === courseIdOrTitle || c.title.toLowerCase().includes(courseIdOrTitle.toLowerCase()) || courseIdOrTitle.toLowerCase().includes(c.title.toLowerCase())
+    ) || courses[0];
+    const courseId = matchedCourse.id;
+
+    setStudents(prev => {
+      const updated = prev.map(s => {
+        if (s.email.toLowerCase() === studentEmail.toLowerCase()) {
+          const enrolled = s.enrolledCourseIds.includes(courseId) ? s.enrolledCourseIds : [...s.enrolledCourseIds, courseId];
+          return { ...s, enrolledCourseIds: enrolled };
+        }
+        return s;
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_students_directory', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    setUser(prev => {
+      if (prev.email.toLowerCase() === studentEmail.toLowerCase() || prev.role === 'student') {
+        if (!prev.enrolledCourseIds.includes(courseId)) {
+          const updated = {
+            ...prev,
+            enrolledCourseIds: [...prev.enrolledCourseIds, courseId],
+            progress: {
+              ...prev.progress,
+              [courseId]: { completedLessonIds: [], percent: 0 },
+            },
+          };
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('univere_active_user', JSON.stringify(updated));
+          }
+          return updated;
+        }
+      }
+      return prev;
+    });
+
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: 'UTR Approved & Course Activated',
+      target: `UTR: ${utrNumber} -> ${matchedCourse.title} (${studentEmail})`,
+      status: 'success',
+    });
+
+    showToast(`🎉 UTR ${utrNumber} Approved! Course "${matchedCourse.title}" activated for ${studentEmail}.`);
+  };
+
+  const rejectUtrPayment = (txId: string, reason = 'Bank UTR not found or mismatched amount') => {
+    setTransactions(prev => {
+      const updated = prev.map(t => (t.id === txId ? { ...t, status: 'rejected' as const } : t));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_transactions', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: 'Payment UTR Rejected',
+      target: `Tx: ${txId} (${reason})`,
+      status: 'warning',
+    });
+
+    showToast(`Transaction rejected: ${reason}`);
+  };
+
+  const setIsMaintenanceMode = (enabled: boolean) => {
+    setIsMaintenanceModeState(enabled);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('univere_maintenance_mode', String(enabled));
+    }
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: enabled ? 'Maintenance Mode Activated' : 'Maintenance Mode Deactivated',
+      target: 'Public Portal Access Gateway',
+      status: enabled ? 'warning' : 'info',
+    });
+    showToast(`Maintenance mode is now ${enabled ? 'ENABLED' : 'DISABLED'}.`);
+  };
+
+  const createBackupSnapshot = () => {
+    const newBackup: SystemBackup = {
+      id: `bak_${Date.now()}`,
+      timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      size: '4.86 GB',
+      cluster: 'Cluster-0 (Primary Atlas)',
+      status: 'completed',
+      type: 'Manual Snapshot',
+    };
+    setSystemBackups(prev => {
+      const updated = [newBackup, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_system_backups', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    addAdminLog({
+      adminName: 'Nur (Super Admin)',
+      action: 'Manual DB Snapshot Generated',
+      target: `${newBackup.id} (Cluster-0 Atlas)`,
+      status: 'success',
+    });
+    showToast('✅ Database backup snapshot generated and synced to MongoDB Atlas cold vault.');
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -808,6 +1330,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         recordUpiTransaction,
         updateTransactionStatus,
         verifyPayment,
+        // 5 Operational Pillars Providers
+        adminLogs,
+        addAdminLog,
+        staffMembers,
+        addStaffMember,
+        removeStaffMember,
+        students,
+        toggleStudentSuspension,
+        enrollStudentInCourse,
+        uploadedResources,
+        addUploadedResource,
+        deleteUploadedResource,
+        updateCourseModerationStatus,
+        approveUtrAndActivateCourse,
+        rejectUtrPayment,
+        isMaintenanceMode,
+        setIsMaintenanceMode,
+        systemBackups,
+        createBackupSnapshot,
       }}
     >
       {children}

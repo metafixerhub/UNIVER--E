@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Toast } from '@/components/common/Toast';
 import { AiChatbot } from '@/components/chat/AiChatbot';
+import { MaintenanceBanner } from '@/components/common/MaintenanceBanner';
 
 export const metadata: Metadata = {
   title: 'UNIVER-E — Learn Today. Lead Tomorrow. | Next-Gen E-Learning Platform',
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="min-h-screen flex flex-col bg-white text-slate-900 font-sans antialiased selection:bg-[#F5A900]/30 selection:text-[#082B59]">
         <AppProvider>
+          <MaintenanceBanner />
           <Navbar />
           <main className="flex-1 pb-16 lg:pb-0">{children}</main>
           <Footer />

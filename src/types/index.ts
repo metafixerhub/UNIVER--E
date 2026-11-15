@@ -89,6 +89,7 @@ export interface Course {
   flashcards?: Flashcard[];
   interactiveQuizHtml?: string;
   isPremiumDownloadOnly?: boolean;
+  moderationStatus?: 'Draft' | 'In Review' | 'Published';
   lastUpdated: string;
   certificateOffered: boolean;
 }
@@ -198,4 +199,55 @@ export interface UpiTransaction {
   upiId: string;
   timestamp: string;
   status: 'verified' | 'pending' | 'rejected';
+}
+
+export interface AdminLogItem {
+  id: string;
+  timestamp: string;
+  adminName: string;
+  action: string;
+  target: string;
+  status: 'success' | 'warning' | 'info';
+  ip?: string;
+}
+
+export interface StudentRecord {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  enrolledCourseIds: string[];
+  isSuspended: boolean;
+  registeredAt: string;
+  isPremium: boolean;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Super Admin' | 'Content Manager' | 'Finance Manager' | 'Academic Lead';
+  status: 'active' | 'inactive';
+  lastActive: string;
+}
+
+export interface UploadedResource {
+  id: string;
+  title: string;
+  fileName: string;
+  fileSize: number; // in bytes
+  fileType: 'video' | 'pdf' | 'image' | 'document';
+  courseId: string;
+  uploadedAt: string;
+  status: 'scanned_safe' | 'pending_scan';
+  url: string;
+}
+
+export interface SystemBackup {
+  id: string;
+  timestamp: string;
+  size: string;
+  cluster: string;
+  status: 'completed' | 'in_progress';
+  type: 'Automated Daily' | 'Manual Snapshot';
 }
