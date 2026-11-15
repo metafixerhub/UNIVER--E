@@ -119,8 +119,8 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Left: Brand Logo */}
-            <div className="flex items-center gap-6">
-              <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex items-center gap-4 lg:gap-6 flex-shrink-0">
+              <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0 select-none">
                 <div className="relative w-11 h-11 flex-shrink-0">
                   <Image
                     src="/images/logo.jpg"
@@ -131,12 +131,12 @@ export const Navbar: React.FC = () => {
                     priority
                   />
                 </div>
-                <div className="flex flex-col">
-                  <div className="flex items-baseline font-black tracking-tight text-2xl font-brand">
+                <div className="flex flex-col flex-shrink-0">
+                  <div className="flex items-baseline font-black tracking-tight text-2xl font-brand whitespace-nowrap leading-none">
                     <span className="text-[#082B59]">UNIVER</span>
-                    <span className="text-[#F5A900]">-E</span>
+                    <span className="text-[#F5A900] inline-block whitespace-nowrap">&#8209;E</span>
                   </div>
-                  <span className="text-[9px] uppercase tracking-widest font-semibold text-slate-500 -mt-1">
+                  <span className="text-[9px] uppercase tracking-widest font-semibold text-slate-500 whitespace-nowrap pt-0.5">
                     Digital University
                   </span>
                 </div>

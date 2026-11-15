@@ -26,7 +26,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-white/10">
           {/* Brand info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 select-none">
               <div className="w-10 h-10 relative flex-shrink-0 bg-white rounded-lg p-0.5">
                 <Image
                   src="/images/logo.jpg"
@@ -36,9 +36,9 @@ export const Footer: React.FC = () => {
                   className="w-full h-full object-contain rounded"
                 />
               </div>
-              <div className="font-black text-2xl tracking-tight font-brand">
+              <div className="font-black text-2xl tracking-tight font-brand whitespace-nowrap leading-none flex items-baseline">
                 <span className="text-white">UNIVER</span>
-                <span className="text-[#F5A900]">-E</span>
+                <span className="text-[#F5A900] inline-block whitespace-nowrap">&#8209;E</span>
               </div>
             </Link>
 
