@@ -142,3 +142,13 @@ export interface Testimonial {
   comment: string;
   courseTaken: string;
 }
+
+
+export interface ContactInquiry {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  createdAt: string;
+  status: 'new' | 'replied' | 'archived';
+}

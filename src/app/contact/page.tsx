@@ -1,20 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquareText, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquareText, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 export default function ContactPage() {
-  const { showToast } = useApp();
+  const { submitInquiry } = useApp();
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    await submitInquiry({ name, email, message });
+    setIsSubmitting(false);
     setSubmitted(true);
-    showToast('Your message has been received by the UNIVER-E support team!');
   };
 
   return (
@@ -29,7 +32,7 @@ export default function ContactPage() {
             We are here to help you succeed
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            Have questions regarding admissions, course syllabus, university partnerships, or technical issues?
+            Have questions regarding admissions, course syllabus, university partnerships, or technical issues? All inquiries route directly to the Admin Portal.
           </p>
         </div>
 
@@ -57,7 +60,7 @@ export default function ContactPage() {
                   <div>
                     <h4 className="font-bold text-slate-800">Email Inquiries</h4>
                     <p>support@univer-e.in (Learner Support)</p>
-                    <p>admissions@univer-e.in (Programs)</p>
+                    <p>admin@univer-e.in (Direct Administration)</p>
                   </div>
                 </div>
 
@@ -71,18 +74,39 @@ export default function ContactPage() {
                   </div>
                 </div>
               </div>
+
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <ShieldCheck className="w-4 h-4 text-[#F5A900]" />
+                  <span>Direct Admin Routing</span>
+                </div>
+                <p className="text-[11px] text-amber-800">
+                  Submissions are instantly stored in the central MongoDB Atlas registry and surfaced in the verified Admin Portal.
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Contact Form */}
           <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm">
             {submitted ? (
-              <div className="py-12 text-center space-y-3">
-                <CheckCircle2 className="w-12 h-12 text-[#28A745] mx-auto" />
-                <h3 className="text-2xl font-black text-[#082B59]">Message Transmitted!</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Thank you for contacting UNIVER-E. An academic counselor will reach out via email within 4 business hours.
+              <div className="py-12 text-center space-y-4">
+                <CheckCircle2 className="w-14 h-14 text-[#28A745] mx-auto animate-bounce" />
+                <h3 className="text-2xl font-black text-[#082B59]">Inquiry Transmitted to Admin!</h3>
+                <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+                  Thank you, <strong>{name}</strong>. Your inquiry has been routed directly into the UNIVER-E Admin Portal and logged into the secure database.
                 </p>
+                <button
+                  onClick={() => {
+                    setSubmitted(false);
+                    setName('');
+                    setEmail('');
+                    setMessage('');
+                  }}
+                  className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-slate-700 transition"
+                >
+                  Send Another Inquiry
+                </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -117,7 +141,7 @@ export default function ContactPage() {
                   <textarea
                     rows={5}
                     required
-                    placeholder="Describe your inquiry, course question, or feedback..."
+                    placeholder="Describe your inquiry, course question, or feedback for the admin team..."
                     value={message}
                     onChange={e => setMessage(e.target.value)}
                     className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A8E8]"
@@ -126,10 +150,17 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-[#F5A900] hover:bg-[#D99500] text-[#082B59] font-black text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 bg-[#F5A900] hover:bg-[#D99500] text-[#082B59] font-black text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 disabled:opacity-75"
                 >
-                  <Send className="w-4 h-4 font-bold" />
-                  <span>Transmit Message →</span>
+                  {isSubmitting ? (
+                    <div className="w-5 h-5 border-2 border-[#082B59] border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 font-bold" />
+                      <span>Transmit to Admin Portal →</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}

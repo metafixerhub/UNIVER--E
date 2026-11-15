@@ -27,7 +27,7 @@ import { CATEGORIES, DEPARTMENTS } from '@/data/categories';
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, setUserRole, cart, searchQuery, setSearchQuery, wishlistIds } = useApp();
+  const { user, setUserRole, cart, searchQuery, setSearchQuery, wishlistIds, isAdminAuthenticated } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -107,7 +107,7 @@ export const Navbar: React.FC = () => {
               Instructor
             </button>
             <button
-              onClick={() => setUserRole('admin')}
+              onClick={() => { if (isAdminAuthenticated) { setUserRole('admin'); } else { router.push('/admin/login'); } }}
               className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
                 user.role === 'admin' ? 'bg-[#F5A900] text-[#082B59]' : 'text-gray-300 hover:text-white'
               }`}
@@ -285,7 +285,7 @@ export const Navbar: React.FC = () => {
               {/* Role-specific Quick Links */}
               {user.role === 'admin' ? (
                 <Link
-                  href="/admin"
+                  href={isAdminAuthenticated ? "/admin" : "/admin/login"}
                   className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"
                 >
                   <ShieldCheck className="w-4 h-4" />
@@ -347,7 +347,7 @@ export const Navbar: React.FC = () => {
                       </Link>
 
                       <Link
-                        href="/admin"
+                        href={isAdminAuthenticated ? "/admin" : "/admin/login"}
                         onClick={() => setUserDropdownOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-[#F5F8FC] hover:text-[#082B59]"
                       >

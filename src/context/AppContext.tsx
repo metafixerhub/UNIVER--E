@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Course, Certificate, User } from '@/types';
+import { Course, Certificate, User, ContactInquiry } from '@/types';
 import { COURSES } from '@/data/courses';
 
 interface AppContextType {
@@ -27,6 +27,14 @@ interface AppContextType {
   issueCertificate: (courseId: string, scorePercent: number) => Certificate;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  // Contact inquiries routed directly to Admin Portal
+  inquiries: ContactInquiry[];
+  submitInquiry: (data: { name: string; email: string; message: string }) => Promise<void>;
+  updateInquiryStatus: (id: string, status: 'new' | 'replied' | 'archived') => void;
+  // Dedicated Admin Security
+  isAdminAuthenticated: boolean;
+  adminLogin: (username: string, pass: string) => boolean;
+  adminLogout: () => void;
 }
 
 const DEFAULT_USER: User = {
@@ -65,6 +73,25 @@ const DEFAULT_USER: User = {
   ],
 };
 
+const DEFAULT_INQUIRIES: ContactInquiry[] = [
+  {
+    id: 'inq_101',
+    name: 'Suresh Patel',
+    email: 'suresh.patel@gmail.com',
+    message: 'Hello UNIVER-E Team, we want to purchase 50 student seats for our college department in Ahmedabad. Please send institutional quotation.',
+    createdAt: '15 Nov 2026, 02:40 PM',
+    status: 'new',
+  },
+  {
+    id: 'inq_102',
+    name: 'Ananya Roy',
+    email: 'ananya.roy@outlook.com',
+    message: 'Can I pay for the Full Stack Web Development course using UPI QR on my mobile phone? Also when does the doubt support batch start?',
+    createdAt: '15 Nov 2026, 11:15 AM',
+    status: 'new',
+  },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -74,6 +101,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [inquiries, setInquiries] = useState<ContactInquiry[]>(DEFAULT_INQUIRIES);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+
+  // Check admin session on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAuth = sessionStorage.getItem('univere_admin_auth');
+      if (savedAuth === 'true') {
+        setIsAdminAuthenticated(true);
+      }
+    }
+  }, []);
 
   // Auto clear toast
   useEffect(() => {
@@ -97,8 +136,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       email = 'nur.mohammad@univer-e.in';
       avatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
     } else if (role === 'admin') {
-      name = 'Dr. Sufiyan Ali (Dean & Admin)';
-      email = 'admin@univer-e.in';
+      name = 'Nur (System Admin)';
+      email = 'nur@univer-e.in';
       avatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80';
     }
 
@@ -110,6 +149,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       avatar,
     }));
     showToast(`Switched active view to ${role.toUpperCase()}`);
+  };
+
+  // Dedicated Admin Login verification: user = "nur", password = "nur1438nur"
+  const adminLogin = (username: string, pass: string): boolean => {
+    const cleanUser = username.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    if (cleanUser === 'nur' && cleanPass === 'nur1438nur') {
+      setIsAdminAuthenticated(true);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('univere_admin_auth', 'true');
+      }
+      setUser(prev => ({
+        ...prev,
+        role: 'admin',
+        name: 'Nur (System Admin)',
+        email: 'nur@univer-e.in',
+      }));
+      showToast('Admin Authentication Verified! Welcome, Nur.');
+      return true;
+    } else {
+      showToast('Invalid Administrator Credentials. Access Denied.');
+      return false;
+    }
+  };
+
+  const adminLogout = () => {
+    setIsAdminAuthenticated(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('univere_admin_auth');
+    }
+    setUserRole('student');
+    showToast('Admin logged out successfully.');
+  };
+
+  // Submit Inquiry from Contact Page -> directly to Admin Portal & MongoDB Atlas
+  const submitInquiry = async (data: { name: string; email: string; message: string }) => {
+    const newInq: ContactInquiry = {
+      id: `inq_${Date.now()}`,
+      name: data.name,
+      email: data.email,
+      message: data.message,
+      createdAt: new Date().toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      status: 'new',
+    };
+
+    setInquiries(prev => [newInq, ...prev]);
+
+    // Asynchronously push to Atlas inquiries collection
+    try {
+      fetch('https://one0l-server-point-234567.onrender.com/api/external/push-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clusterIndex: 1,
+          dbName: 'UNIVER_E_DB',
+          collectionName: 'inquiries',
+          payload: newInq,
+        }),
+      }).catch(e => console.error('[Atlas Inquiries Sync]', e));
+    } catch (e) {
+      // Graceful fallback
+    }
+
+    showToast('Your inquiry has been transmitted directly to the Admin Portal.');
+  };
+
+  const updateInquiryStatus = (id: string, status: 'new' | 'replied' | 'archived') => {
+    setInquiries(prev =>
+      prev.map(inq => (inq.id === id ? { ...inq, status } : inq))
+    );
+    showToast(`Inquiry status updated to ${status.toUpperCase()}`);
   };
 
   const enrolledCourses = COURSES.filter(c => user.enrolledCourseIds.includes(c.id));
@@ -132,7 +249,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         },
       },
     }));
-    // Remove from cart if present
     setCart(prev => prev.filter(c => c.id !== courseId));
     showToast(`Successfully enrolled in ${course?.title || 'course'}!`);
     return true;
@@ -265,6 +381,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         issueCertificate,
         toastMessage,
         showToast,
+        inquiries,
+        submitInquiry,
+        updateInquiryStatus,
+        isAdminAuthenticated,
+        adminLogin,
+        adminLogout,
       }}
     >
       {children}

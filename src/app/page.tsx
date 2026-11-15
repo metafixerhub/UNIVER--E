@@ -447,25 +447,25 @@ export default function HomePage() {
 
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-3">
               <button
-                onClick={() => alert('UNIVER-E for Android is launching on Google Play Store!')}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-3 transition shadow-md"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = '/univer-e.apk';
+                  link.download = 'univer-e.apk';
+                  link.click();
+                  alert('UNIVER-E Mobile App APK download initiated! Version 2.4 (Android)');
+                }}
+                className="px-6 py-3.5 rounded-2xl bg-[#082B59] hover:bg-[#051C3A] text-white flex items-center gap-3.5 transition shadow-lg hover:shadow-xl hover:scale-105 border border-navy-700 group cursor-pointer"
               >
-                <span className="text-xl">▶</span>
-                <div className="text-left">
-                  <div className="text-[9px] uppercase tracking-wider text-slate-300">Get it on</div>
-                  <div className="text-xs font-bold leading-none">Google Play</div>
+                <div className="w-10 h-10 rounded-xl bg-[#F5A900] text-[#082B59] flex items-center justify-center font-black text-xl">
+                  🤖
                 </div>
-              </button>
-
-              <button
-                onClick={() => alert('UNIVER-E for iOS is launching on Apple App Store!')}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-3 transition shadow-md"
-              >
-                <span className="text-xl"></span>
                 <div className="text-left">
-                  <div className="text-[9px] uppercase tracking-wider text-slate-300">Download on the</div>
-                  <div className="text-xs font-bold leading-none">App Store</div>
+                  <div className="text-[10px] uppercase font-bold text-amber-300 tracking-wider">Direct Android Download</div>
+                  <div className="text-sm sm:text-base font-black leading-none text-white">Get it on APK</div>
                 </div>
+                <span className="ml-2 text-xs font-bold text-slate-300 bg-white/10 px-2.5 py-1 rounded-full group-hover:bg-[#F5A900] group-hover:text-[#082B59] transition">
+                  v2.4 APK
+                </span>
               </button>
             </div>
           </div>
