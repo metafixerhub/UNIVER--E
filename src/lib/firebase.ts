@@ -17,7 +17,7 @@ import {
  * Project ID: univer-e
  */
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDemoKeyUNIVERE2026FirebasePlaceholder',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyUNIVERE2026ProductionKey',
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'univer-e.firebaseapp.com',
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'univer-e',
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'univer-e.firebasestorage.app',
@@ -25,48 +25,38 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:107977837640:web:univer_e_prod_app',
 };
 
-// Initialize Firebase safely
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase App for SSR & Client
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-
-// Google Auth Provider setup
 export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 /**
- * 1-Click Google Sign-In
+ * Google 1-Click Sign-In
  */
 export async function signInWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
-    return {
-      success: true,
-      user: result.user,
-    };
+    return { success: true, user: result.user };
   } catch (error: any) {
-    console.error('[Firebase Google Auth Error]', error);
-    return {
-      success: false,
-      error: error.message || 'Google authentication failed',
-    };
+    console.warn('[Firebase Google Auth]:', error.message);
+    return { success: false, error: error.message };
   }
 }
 
 /**
- * Setup Recaptcha Verifier for Phone OTP
+ * Recaptcha verifier for phone OTP SMS
  */
-export function setupRecaptcha(elementId: string) {
+export function setUpRecaptcha(elementId: string) {
   if (typeof window === 'undefined') return null;
-
   try {
     return new RecaptchaVerifier(auth, elementId, {
       size: 'invisible',
       callback: () => {
-        console.log('[Firebase Recaptcha] Verified');
+        console.log('[Firebase reCAPTCHA] Solved');
       },
     });
-  } catch (err) {
-    console.warn('[Firebase Recaptcha Warning]', err);
+  } catch (e) {
+    console.warn('[Firebase reCAPTCHA] Initialized:', e);
     return null;
   }
 }
@@ -74,30 +64,34 @@ export function setupRecaptcha(elementId: string) {
 /**
  * Send Phone OTP via Firebase
  */
-export async function sendOtpToPhone(phoneNumber: string, recaptchaVerifier: RecaptchaVerifier): Promise<ConfirmationResult> {
-  return signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+export async function sendPhoneOtp(phoneNumber: string, recaptchaVerifier: RecaptchaVerifier) {
+  try {
+    const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+    return { success: true, confirmationResult };
+  } catch (error: any) {
+    console.warn('[Firebase Phone Auth]:', error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 /**
- * Check Browser compatibility for Web Authentication and Recaptcha
+ * Browser verification capability helper
  */
 export function getBrowserAuthCapabilities() {
-  if (typeof window === 'undefined') return { supported: true, name: 'Server' };
-
-  const ua = navigator.userAgent;
-  let browser = 'Google Chrome';
-
-  if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Google Chrome';
-  else if (ua.includes('Edg')) browser = 'Microsoft Edge';
-  else if (ua.includes('Firefox')) browser = 'Mozilla Firefox';
-  else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Apple Safari';
-  else if (ua.includes('OPR') || ua.includes('Opera')) browser = 'Opera';
-
+  if (typeof window === 'undefined') {
+    return { hasLocalStorage: false, hasCrypto: false, userAgent: 'SSR' };
+  }
   return {
-    browser,
     hasLocalStorage: typeof window.localStorage !== 'undefined',
-    hasSessionStorage: typeof window.sessionStorage !== 'undefined',
     hasCrypto: typeof window.crypto !== 'undefined',
-    hasServiceWorker: 'serviceWorker' in navigator,
+    userAgent: window.navigator.userAgent,
+    isSecureContext: window.isSecureContext,
   };
 }
+
+export {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+};

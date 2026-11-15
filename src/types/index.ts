@@ -98,9 +98,9 @@ export interface Department {
   slug: string;
   head: string;
   programsCount: number;
-  studentsEnrolled: number;
   description: string;
-  icon: string;
+  studentsEnrolled?: number;
+  icon?: string;
 }
 
 export interface Certificate {
@@ -113,7 +113,6 @@ export interface Certificate {
   instructorName: string;
   issueDate: string;
   grade: string;
-  qrCodeUrl?: string;
   verificationUrl: string;
 }
 
@@ -143,7 +142,6 @@ export interface Testimonial {
   courseTaken: string;
 }
 
-
 export interface ContactInquiry {
   id: string;
   name: string;
@@ -151,4 +149,24 @@ export interface ContactInquiry {
   message: string;
   createdAt: string;
   status: 'new' | 'replied' | 'archived';
+}
+
+export interface PaymentSettings {
+  upiId: string;
+  merchantName: string;
+  activeProvider: 'direct_upi' | 'upi_gateway' | 'cashfree' | 'razorpay';
+  isAutoVerify: boolean;
+  publishedAt: string;
+}
+
+export interface UpiTransaction {
+  id: string;
+  utrNumber: string;
+  studentName: string;
+  studentEmail: string;
+  courseTitle: string;
+  amount: number;
+  upiId: string;
+  timestamp: string;
+  status: 'verified' | 'pending' | 'rejected';
 }

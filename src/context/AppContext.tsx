@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Course, Certificate, User, ContactInquiry } from '@/types';
+import { Course, Certificate, User, ContactInquiry, PaymentSettings, UpiTransaction } from '@/types';
 import { COURSES } from '@/data/courses';
 
 interface AppContextType {
@@ -35,6 +35,12 @@ interface AppContextType {
   isAdminAuthenticated: boolean;
   adminLogin: (username: string, pass: string) => boolean;
   adminLogout: () => void;
+  // UPI Payment Gateway Management (Publishable from Admin Portal)
+  paymentSettings: PaymentSettings;
+  updatePaymentSettings: (settings: Partial<PaymentSettings>) => void;
+  transactions: UpiTransaction[];
+  recordUpiTransaction: (tx: Omit<UpiTransaction, 'id' | 'timestamp'>) => void;
+  updateTransactionStatus: (id: string, status: 'verified' | 'pending' | 'rejected') => void;
 }
 
 const DEFAULT_USER: User = {
@@ -92,6 +98,39 @@ const DEFAULT_INQUIRIES: ContactInquiry[] = [
   },
 ];
 
+const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
+  upiId: '7557060447-5@ybl',
+  merchantName: 'UNIVER-E Digital Academy',
+  activeProvider: 'direct_upi',
+  isAutoVerify: true,
+  publishedAt: '15 Nov 2026, 06:00 PM IST',
+};
+
+const DEFAULT_TRANSACTIONS: UpiTransaction[] = [
+  {
+    id: 'tx_981',
+    utrNumber: '431902847192',
+    studentName: 'Ayesha Parveen',
+    studentEmail: 'ayesha.p@gmail.com',
+    courseTitle: 'Full Stack Web Development',
+    amount: 2999,
+    upiId: '7557060447-5@ybl',
+    timestamp: '15 Nov 2026, 03:15 PM',
+    status: 'verified',
+  },
+  {
+    id: 'tx_982',
+    utrNumber: '431872190842',
+    studentName: 'Sufiyan Ali',
+    studentEmail: 'sufiyan.ali@yahoo.com',
+    courseTitle: 'AI Fundamentals with Python',
+    amount: 3499,
+    upiId: '7557060447-5@ybl',
+    timestamp: '15 Nov 2026, 01:45 PM',
+    status: 'verified',
+  },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -103,13 +142,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [inquiries, setInquiries] = useState<ContactInquiry[]>(DEFAULT_INQUIRIES);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
+  const [transactions, setTransactions] = useState<UpiTransaction[]>(DEFAULT_TRANSACTIONS);
 
-  // Check admin session on mount
+  // Check saved state on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedAuth = sessionStorage.getItem('univere_admin_auth');
       if (savedAuth === 'true') {
         setIsAdminAuthenticated(true);
+      }
+      const savedPayment = localStorage.getItem('univere_payment_settings');
+      if (savedPayment) {
+        try {
+          setPaymentSettings(JSON.parse(savedPayment));
+        } catch (e) {}
+      }
+      const savedTxs = localStorage.getItem('univere_transactions');
+      if (savedTxs) {
+        try {
+          setTransactions(JSON.parse(savedTxs));
+        } catch (e) {}
       }
     }
   }, []);
@@ -124,6 +177,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
+  };
+
+  const updatePaymentSettings = (settings: Partial<PaymentSettings>) => {
+    setPaymentSettings(prev => {
+      const updated = {
+        ...prev,
+        ...settings,
+        publishedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_payment_settings', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Payment settings published! Active UPI: ${settings.upiId || paymentSettings.upiId}`);
+  };
+
+  const recordUpiTransaction = (tx: Omit<UpiTransaction, 'id' | 'timestamp'>) => {
+    const newTx: UpiTransaction = {
+      ...tx,
+      id: `tx_${Date.now()}`,
+      timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+    };
+    setTransactions(prev => {
+      const updated = [newTx, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_transactions', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const updateTransactionStatus = (id: string, status: 'verified' | 'pending' | 'rejected') => {
+    setTransactions(prev => {
+      const updated = prev.map(t => (t.id === id ? { ...t, status } : t));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_transactions', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Transaction ${id} marked as ${status}`);
   };
 
   const setUserRole = (role: 'student' | 'instructor' | 'admin') => {
@@ -148,123 +242,99 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       email,
       avatar,
     }));
-    showToast(`Switched active view to ${role.toUpperCase()}`);
   };
 
-  // Dedicated Admin Login verification: user = "nur", password = "nur1438nur"
   const adminLogin = (username: string, pass: string): boolean => {
     const cleanUser = username.trim().toLowerCase();
-    const cleanPass = pass.trim();
-
-    if (cleanUser === 'nur' && cleanPass === 'nur1438nur') {
+    if (cleanUser === 'nur' && pass === 'nur1438nur') {
       setIsAdminAuthenticated(true);
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('univere_admin_auth', 'true');
-      }
       setUser(prev => ({
         ...prev,
         role: 'admin',
         name: 'Nur (System Admin)',
         email: 'nur@univer-e.in',
       }));
-      showToast('Admin Authentication Verified! Welcome, Nur.');
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('univere_admin_auth', 'true');
+      }
+      showToast('Admin root authentication verified!');
       return true;
-    } else {
-      showToast('Invalid Administrator Credentials. Access Denied.');
-      return false;
     }
+    showToast('Invalid administrator credentials.');
+    return false;
   };
 
   const adminLogout = () => {
     setIsAdminAuthenticated(false);
+    setUserRole('student');
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('univere_admin_auth');
     }
-    setUserRole('student');
-    showToast('Admin logged out successfully.');
+    showToast('Logged out of Admin Portal.');
   };
 
-  // Submit Inquiry from Contact Page -> directly to Admin Portal & MongoDB Atlas
   const submitInquiry = async (data: { name: string; email: string; message: string }) => {
-    const newInq: ContactInquiry = {
+    const newInquiry: ContactInquiry = {
       id: `inq_${Date.now()}`,
       name: data.name,
       email: data.email,
       message: data.message,
-      createdAt: new Date().toLocaleString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      createdAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
       status: 'new',
     };
 
-    setInquiries(prev => [newInq, ...prev]);
+    setInquiries(prev => [newInquiry, ...prev]);
+    showToast('Inquiry transmitted directly to Admin Portal & MongoDB Atlas!');
 
-    // Asynchronously push to Atlas inquiries collection
     try {
-      fetch('https://one0l-server-point-234567.onrender.com/api/external/push-data', {
+      await fetch('https://one0l-server-point-234567.onrender.com/api/external/push-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clusterIndex: 1,
-          dbName: 'UNIVER_E_DB',
-          collectionName: 'inquiries',
-          payload: newInq,
+          dbName: 'ShopDB',
+          collectionName: 'contact_inquiries',
+          payload: newInquiry,
         }),
-      }).catch(e => console.error('[Atlas Inquiries Sync]', e));
+      });
     } catch (e) {
-      // Graceful fallback
+      console.warn('Sync to outer MongoDB Render proxy failed (offline):', e);
     }
-
-    showToast('Your inquiry has been transmitted directly to the Admin Portal.');
   };
 
   const updateInquiryStatus = (id: string, status: 'new' | 'replied' | 'archived') => {
     setInquiries(prev =>
       prev.map(inq => (inq.id === id ? { ...inq, status } : inq))
     );
-    showToast(`Inquiry status updated to ${status.toUpperCase()}`);
+    showToast(`Inquiry marked as ${status}`);
   };
 
   const enrolledCourses = COURSES.filter(c => user.enrolledCourseIds.includes(c.id));
 
-  const enrollCourse = (courseId: string): boolean => {
+  const enrollCourse = (courseId: string) => {
     if (user.enrolledCourseIds.includes(courseId)) {
-      showToast('You are already enrolled in this course!');
+      showToast('You are already enrolled in this course.');
       return false;
     }
+
     const course = COURSES.find(c => c.id === courseId);
     setUser(prev => ({
       ...prev,
       enrolledCourseIds: [...prev.enrolledCourseIds, courseId],
       progress: {
         ...prev.progress,
-        [courseId]: {
-          completedLessonIds: [],
-          lastWatchedLessonId: course?.curriculum[0]?.lessons[0]?.id || '',
-          percent: 0,
-        },
+        [courseId]: { completedLessonIds: [], percent: 0 },
       },
     }));
-    setCart(prev => prev.filter(c => c.id !== courseId));
+
     showToast(`Successfully enrolled in ${course?.title || 'course'}!`);
     return true;
   };
 
   const toggleWishlist = (courseId: string) => {
-    setWishlistIds(prev => {
-      const exists = prev.includes(courseId);
-      if (exists) {
-        showToast('Removed from wishlist');
-        return prev.filter(id => id !== courseId);
-      } else {
-        showToast('Added to wishlist');
-        return [...prev, courseId];
-      }
-    });
+    setWishlistIds(prev =>
+      prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
+    );
   };
 
   const addToCart = (course: Course) => {
@@ -273,16 +343,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     if (cart.some(c => c.id === course.id)) {
-      showToast('Course already in your cart!');
+      showToast('Course is already in your shopping cart.');
       return;
     }
     setCart(prev => [...prev, course]);
-    showToast(`Added "${course.title}" to cart`);
+    showToast(`Added "${course.title}" to cart.`);
   };
 
   const removeFromCart = (courseId: string) => {
     setCart(prev => prev.filter(c => c.id !== courseId));
-    showToast('Removed course from cart');
   };
 
   const clearCart = () => {
@@ -290,40 +359,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const markLessonComplete = (courseId: string, lessonId: string) => {
-    const course = COURSES.find(c => c.id === courseId);
-    if (!course) return;
+    setUser(prev => {
+      const currentProg = prev.progress[courseId] || { completedLessonIds: [], percent: 0 };
+      const completed = currentProg.completedLessonIds.includes(lessonId)
+        ? currentProg.completedLessonIds
+        : [...currentProg.completedLessonIds, lessonId];
 
-    const totalLessons = course.curriculum.reduce((acc, sec) => acc + sec.lessons.length, 0);
-    const currentProgress = user.progress[courseId] || { completedLessonIds: [], percent: 0, lastWatchedLessonId: lessonId };
-    const alreadyCompleted = currentProgress.completedLessonIds.includes(lessonId);
+      const course = COURSES.find(c => c.id === courseId);
+      const totalLessons = course ? course.lessonsCount : 10;
+      const percent = Math.min(100, Math.round((completed.length / totalLessons) * 100));
 
-    const updatedCompleted = alreadyCompleted
-      ? currentProgress.completedLessonIds.filter(id => id !== lessonId)
-      : [...currentProgress.completedLessonIds, lessonId];
-
-    const newPercent = Math.min(100, Math.round((updatedCompleted.length / (totalLessons || 1)) * 100));
-
-    setUser(prev => ({
-      ...prev,
-      progress: {
-        ...prev.progress,
-        [courseId]: {
-          completedLessonIds: updatedCompleted,
-          lastWatchedLessonId: lessonId,
-          percent: newPercent,
+      return {
+        ...prev,
+        progress: {
+          ...prev.progress,
+          [courseId]: {
+            completedLessonIds: completed,
+            lastWatchedLessonId: lessonId,
+            percent,
+          },
         },
-      },
-      completedCourseIds:
-        newPercent === 100 && !prev.completedCourseIds.includes(courseId)
-          ? [...prev.completedCourseIds, courseId]
-          : prev.completedCourseIds,
-    }));
-
-    if (newPercent === 100) {
-      showToast(`Congratulations! You completed 100% of ${course.title}!`);
-    } else if (!alreadyCompleted) {
-      showToast('Lesson marked as complete');
-    }
+      };
+    });
   };
 
   const getCourseProgress = (courseId: string): number => {
@@ -332,15 +389,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const issueCertificate = (courseId: string, scorePercent: number): Certificate => {
     const course = COURSES.find(c => c.id === courseId);
-    const certNum = `UNIVER-E-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const certNum = `UNIVER-E-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const newCert: Certificate = {
       id: `cert_${Date.now()}`,
       certificateNumber: certNum,
       studentName: user.name,
       studentEmail: user.email,
       courseId,
-      courseTitle: course?.title || 'Certified Course',
-      instructorName: course?.instructor.name || 'UNIVER-E Academic Board',
+      courseTitle: course?.title || 'Certified Specialization',
+      instructorName: course?.instructor.name || 'UNIVER-E Academic Faculty',
       issueDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       grade: scorePercent >= 90 ? `Distinction (${scorePercent}%)` : `First Class (${scorePercent}%)`,
       verificationUrl: `/certificates/${certNum}`,
@@ -387,6 +445,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isAdminAuthenticated,
         adminLogin,
         adminLogout,
+        paymentSettings,
+        updatePaymentSettings,
+        transactions,
+        recordUpiTransaction,
+        updateTransactionStatus,
       }}
     >
       {children}
