@@ -16,6 +16,8 @@ import { COURSES, INSTRUCTORS } from '@/data/courses';
 interface AppContextType {
   user: User;
   setUserRole: (role: 'student' | 'instructor' | 'admin') => void;
+  registerUser: (userData: { name: string; email: string; phone?: string; role?: 'student' | 'instructor' }) => void;
+  loginUser: (userData: { email: string; name?: string; role?: 'student' | 'instructor' | 'admin' }) => void;
   enrolledCourseIds: string[];
   enrolledCourses: Course[];
   completedCourseIds: string[];
@@ -463,6 +465,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const registerUser = (userData: { name: string; email: string; phone?: string; role?: 'student' | 'instructor' }) => {
+    setUser(prev => {
+      const updated: User = {
+        ...prev,
+        id: `usr_${Date.now()}`,
+        name: userData.name.trim() || 'Learner',
+        email: userData.email.trim().toLowerCase(),
+        role: userData.role || 'student',
+        isPremium: false,
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userData.name || 'Scholar')}`,
+        enrolledCourseIds: prev.enrolledCourseIds || ['ai-fundamentals-python', 'graphic-design-canva-pro'],
+        completedCourseIds: prev.completedCourseIds || ['graphic-design-canva-pro'],
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Welcome to UNIVER-E, ${userData.name}! Account registered successfully.`);
+  };
+
+  const loginUser = (userData: { email: string; name?: string; role?: 'student' | 'instructor' | 'admin' }) => {
+    setUser(prev => {
+      const updated: User = {
+        ...prev,
+        email: userData.email.trim().toLowerCase(),
+        name: userData.name || prev.name || 'Learner',
+        role: userData.role || 'student',
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('univere_active_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast(`Signed in as ${userData.name || userData.email}`);
+  };
+
   const adminLogin = (username: string, pass: string): boolean => {
     const cleanUser = username.trim().toLowerCase();
     if (cleanUser === 'nur' && pass === 'nur1438nur') {
@@ -654,6 +693,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         user,
         setUserRole,
+        registerUser,
+        loginUser,
         enrolledCourseIds: user.enrolledCourseIds,
         enrolledCourses,
         completedCourseIds: user.completedCourseIds,

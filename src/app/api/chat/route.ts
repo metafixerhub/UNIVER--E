@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+export const maxDuration = 60; // Extend Vercel Serverless execution limit for OpenRouter AI
 
 const MODEL_ID = 'nvidia/nemotron-3-ultra-550b-a55b:free';
 
@@ -80,37 +80,42 @@ export async function POST(req: NextRequest) {
       ...messages.slice(-8), // Keep context window lean & fast
     ];
 
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://univer-e.in',
-          'X-Title': 'UNIVER-E Digital Academy AI Assistant',
-        },
-        body: JSON.stringify({
-          model: MODEL_ID,
-          messages: payloadMessages,
-          temperature: 0.3,
-          max_tokens: 1024,
-        }),
-      });
+    const apiKey = process.env.OPENROUTER_API_KEY || '';
 
-      if (response.ok) {
-        const data = await response.json();
-        const content =
-          data?.choices?.[0]?.message?.content ||
-          'I am here to help you navigate UNIVER-E courses and academic policies.';
-
-        return NextResponse.json({
-          reply: content,
-          model: data?.model || MODEL_ID,
-          sources: extractSources(content),
+    if (apiKey) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://univer-e.in',
+            'X-Title': 'UNIVER-E Digital Academy AI Assistant',
+          },
+          body: JSON.stringify({
+            model: MODEL_ID,
+            messages: payloadMessages,
+            temperature: 0.3,
+            max_tokens: 1024,
+          }),
+          signal: AbortSignal.timeout(25000),
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          const content =
+            data?.choices?.[0]?.message?.content ||
+            'I am here to help you navigate UNIVER-E courses and academic policies.';
+
+          return NextResponse.json({
+            reply: content,
+            model: data?.model || MODEL_ID,
+            sources: extractSources(content),
+          });
+        }
+      } catch (apiError) {
+        console.warn('[OpenRouter] API request failed or timed out, engaging local knowledge copilot:', apiError);
       }
-    } catch (apiError) {
-      console.warn('[OpenRouter] API request failed, engaging local knowledge copilot:', apiError);
     }
 
     // High-speed fallback knowledge engine
